@@ -1,11 +1,24 @@
 'use client';
 
-import React from 'react';
-import { ArrowRight, Clock, ChevronRight, Sparkles, Sprout } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  ArrowRight,
+  Clock,
+  ChevronRight,
+  Sparkles,
+  Sprout,
+  PenLine,
+  Mic,
+  Image as ImageIcon,
+  Send,
+  Plus,
+} from 'lucide-react';
 import { useApp } from '@/context/AppContext';
-import { CommandBar } from '@/components/command/CommandBar';
-import { AIResponseCard } from '@/components/command/AIResponseCard';
 import { TaskRow } from '@/components/tasks/TaskRow';
+import { AIResponseCard } from '@/components/command/AIResponseCard';
+import { Priority, Task } from '@/types';
+import { brainDumpService } from '@/services/brainDumpService';
+import { soundManager } from '@/lib/soundEffects';
 
 export const HomeScreen: React.FC = () => {
   const {
@@ -13,220 +26,272 @@ export const HomeScreen: React.FC = () => {
     tasks,
     setActiveScreen,
     setSelectedTaskDetail,
+    addBrainDumpRecord,
+    acceptAllExtractedItems,
+    setQuickAddOpen,
   } = useApp();
 
+  const [quickDumpText, setQuickDumpText] = useState('');
+  const [isDumping, setIsDumping] = useState(false);
+
+  // Time of Day Greeting
   const timeOfDay = React.useMemo(() => {
     if (typeof window === 'undefined') return { greeting: 'Good morning', quote: 'The morning forest breeze is gentle today.' };
     const hour = new Date().getHours();
     if (hour < 12) {
       return {
         greeting: 'Good morning',
-        quote: 'The forest glade is waking up. Plant your focus seeds for the day! 🌱',
+        quote: 'The forest glade is waking up. Dump your thoughts or plant your focus seeds! 🌱',
       };
     }
     if (hour < 17) {
       return {
         greeting: 'Good afternoon',
-        quote: 'Totoro is holding his leafy umbrella. Keep up the steady pace! 🍃',
+        quote: 'Totoro is holding his leafy umbrella. Keep up your steady focus pace! 🍃',
       };
     }
     return {
       greeting: 'Peaceful evening',
-      quote: 'The stars are shining over the giant camphor tree. Rest well soon. ✨',
+      quote: 'The stars are shining over the giant camphor tree. Harvest your remaining tasks. ✨',
     };
   }, []);
 
-  // Filter tasks for today's focus
-  const todayTasks = tasks.filter((t) => t.isPriorityToday || t.deadline?.includes('Today'));
-  const completedTodayCount = todayTasks.filter((t) => t.isCompleted).length;
-  const progressPercent = todayTasks.length > 0 ? Math.round((completedTodayCount / todayTasks.length) * 100) : 0;
+  // Formatted Current Date & Day
+  const todayFormatted = React.useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }, []);
 
-  // Upcoming deadlines (tasks with a deadline that are pending)
-  const upcomingDeadlines = tasks
-    .filter((t) => !t.isCompleted && t.deadline)
-    .slice(0, 3);
+  // Strict Priority Sorting: Urgent (0) -> High (1) -> Medium (2) -> Low (3)
+  const priorityWeight: Record<Priority, number> = {
+    urgent: 0,
+    high: 1,
+    medium: 2,
+    low: 3,
+  };
+
+  const sortedTasks = [...tasks].sort((a, b) => {
+    // 1. Uncompleted tasks first
+    if (a.isCompleted !== b.isCompleted) {
+      return a.isCompleted ? 1 : -1;
+    }
+    // 2. Strict priority order
+    const pDiff = priorityWeight[a.priority] - priorityWeight[b.priority];
+    if (pDiff !== 0) return pDiff;
+    // 3. Today focus priority
+    if (a.isPriorityToday !== b.isPriorityToday) {
+      return a.isPriorityToday ? -1 : 1;
+    }
+    return 0;
+  });
+
+  const activeTasks = sortedTasks.filter((t) => !t.isCompleted);
+  const completedCount = sortedTasks.filter((t) => t.isCompleted).length;
+  const progressPercent =
+    sortedTasks.length > 0 ? Math.round((completedCount / sortedTasks.length) * 100) : 0;
+
+  // Instant Quick Dump Action
+  const handleQuickDumpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickDumpText.trim() || isDumping) return;
+
+    setIsDumping(true);
+    soundManager.playSparkle();
+
+    try {
+      // 1. Create and save dump
+      const rawDump = brainDumpService.createRawDump(quickDumpText.trim(), '', []);
+      addBrainDumpRecord(rawDump);
+
+      // 2. Process with AI and extract tasks
+      const { dump: processed, result } = await brainDumpService.process(rawDump, quickDumpText.trim(), '', []);
+      addBrainDumpRecord(processed);
+
+      // 3. Auto-accept extracted tasks directly into workspace
+      if (result.items.length > 0) {
+        acceptAllExtractedItems(processed.id, result.items);
+      }
+
+      setQuickDumpText('');
+    } catch {
+      // Fallback
+    } finally {
+      setIsDumping(false);
+    }
+  };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 pb-16 font-kalam">
-      {/* 1. Totoro Hero Greeting Banner */}
-      <section className="relative overflow-hidden rounded-3xl p-6 sm:p-7 bg-[var(--bg-card)] border-2 border-[var(--border-subtle)] backdrop-blur-2xl shadow-[var(--shadow-ghibli)]">
-        {/* Soft decorative background glow */}
-        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-emerald-500/10 dark:bg-emerald-400/15 blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-5">
-          {/* Totoro Artwork Avatar */}
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 border-2 border-emerald-400/40 shadow-lg ghibli-btn bg-[#E8F1F2]/80">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/assets/ghibli/totoro_hero.jpg"
-              alt="Totoro Companion"
-              className="w-full h-full object-cover"
-            />
-          </div>
-
-          {/* Greeting & Forest Wisdom Speech Bubble */}
-          <div className="flex-1 text-center sm:text-left space-y-2">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <span className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-                {timeOfDay.greeting}, {profile.name}! 🍃
-              </span>
-            </div>
-
-            <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium">
-              &ldquo;{timeOfDay.quote}&rdquo;
-            </p>
-
-            {/* Forest Seedling Growth Tracker */}
-            <div className="pt-2">
-              <div className="flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] mb-1">
-                <span className="flex items-center gap-1.5 text-[var(--accent-primary)]">
-                  <Sprout className="w-3.5 h-3.5" />
-                  <span>Forest Bloom: {completedTodayCount} of {todayTasks.length} priorities bloomed</span>
-                </span>
-                <span>{progressPercent}%</span>
-              </div>
-              <div className="h-2.5 w-full bg-[var(--bg-surface-subtle)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
-                <div
-                  className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-lime-400 rounded-full transition-all duration-500 shadow-[0_0_10px_#86efac]"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. Spotlight Command Input */}
-      <section>
-        <CommandBar placeholder="Ask Totoro or type an academic priority..." autoFocus />
-      </section>
-
-      {/* 3. Today's Acorn Priorities */}
-      <section className="space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🌰</span>
-            <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">
-              Today&apos;s Acorn Priorities
-            </h2>
-          </div>
-          <button
-            onClick={() => setActiveScreen('tasks')}
-            className="text-xs text-[var(--accent-primary)] hover:underline flex items-center gap-1 font-bold transition-all ghibli-btn"
-          >
-            <span>Explore all tasks</span>
-            <ArrowRight className="w-3 h-3" />
-          </button>
-        </div>
-
-        <div className="space-y-2.5">
-          {todayTasks.length === 0 ? (
-            <div className="p-8 text-center rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] backdrop-blur-xl space-y-2">
-              <span className="text-2xl">🌱</span>
-              <p className="text-sm font-bold text-[var(--text-primary)]">No urgent seeds planted for today.</p>
-              <p className="text-xs text-[var(--text-secondary)]">Relax under the camphor tree or add a new task!</p>
-            </div>
-          ) : (
-            todayTasks.map((task) => <TaskRow key={task.id} task={task} />)
-          )}
-        </div>
-      </section>
-
-      {/* 4. Upcoming Deadlines */}
-      <section className="space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">⏳</span>
-            <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">
-              Upcoming Deadlines
-            </h2>
-          </div>
-          <Clock className="w-4 h-4 text-[var(--text-muted)]" />
-        </div>
-
-        <div className="space-y-2.5">
-          {upcomingDeadlines.length === 0 ? (
-            <div className="p-5 text-center rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] text-xs backdrop-blur-xl">
-              No upcoming deadlines on the horizon.
-            </div>
-          ) : (
-            upcomingDeadlines.map((task) => (
-              <div
-                key={task.id}
-                onClick={() => setSelectedTaskDetail(task)}
-                className="flex items-center justify-between p-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] hover:border-[var(--accent-primary)] cursor-pointer transition-all duration-200 backdrop-blur-xl shadow-sm ghibli-btn"
-              >
-                <div className="space-y-0.5 min-w-0 pr-2">
-                  <p className="text-sm font-bold text-[var(--text-primary)] truncate">
-                    {task.title}
-                  </p>
-                  <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
-                    <span>🗓️</span>
-                    <span>{task.deadline}</span>
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2.5 shrink-0">
-                  {task.priority === 'urgent' && (
-                    <span className="px-2.5 py-0.5 rounded-full text-xs bg-red-500/15 border border-red-500/30 text-red-400 font-bold">
-                      🌰 Urgent
-                    </span>
-                  )}
-                  {task.priority === 'high' && (
-                    <span className="px-2.5 py-0.5 rounded-full text-xs bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold">
-                      🍃 High
-                    </span>
-                  )}
-                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)]" />
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      {/* 5. AI Forest Spirit Suggestions */}
-      <section className="space-y-3.5">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
-          <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">
-            Forest Spirit Recommendations
-          </h2>
-        </div>
-        <AIResponseCard />
-      </section>
-
-      {/* 6. Catbus Brain Dump Callout Banner */}
-      <section>
-        <div
-          onClick={() => setActiveScreen('braindump')}
-          className="group p-5 sm:p-6 rounded-3xl border-2 border-[var(--border-subtle)] bg-[var(--bg-card)] hover:border-[var(--accent-primary)] cursor-pointer transition-all duration-200 flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-2xl shadow-lg ghibli-btn"
+    <div className="max-w-3xl mx-auto space-y-8 pb-20 font-kalam">
+      {/* 1. Large Hero Greeting + Date & Day Directly Below */}
+      <section className="space-y-2 pt-2">
+        <h1
+          suppressHydrationWarning
+          className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-[var(--text-primary)] font-hangyaboly leading-none"
         >
-          <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="w-12 h-12 rounded-2xl overflow-hidden shrink-0 border border-zinc-700/30">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/assets/ghibli/soot_sprites.jpg"
-                alt="Soot Sprites"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="space-y-0.5">
-              <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] flex items-center gap-1.5 justify-center sm:justify-start">
-                <span>Catch the Catbus Brain Express</span>
-                <span>🚌</span>
-              </h3>
+          {timeOfDay.greeting}, {profile.name}! 🍃
+        </h1>
+
+        {/* Date and Day positioned directly under the greeting */}
+        <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base text-[var(--text-secondary)] font-medium">
+          <span suppressHydrationWarning className="flex items-center gap-1.5">
+            <span>🗓️</span>
+            <span>{todayFormatted}</span>
+          </span>
+          <span className="text-[var(--text-muted)]">·</span>
+          <span className="text-[var(--accent-primary)] font-bold">
+            {timeOfDay.quote}
+          </span>
+        </div>
+      </section>
+
+      {/* 2. Forest Bloom Progress Gauge */}
+      <section className="p-4 sm:p-5 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] backdrop-blur-2xl shadow-sm">
+        <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[var(--text-secondary)] mb-2">
+          <span className="flex items-center gap-2 text-[var(--text-primary)]">
+            <Sprout className="w-4 h-4 text-[var(--accent-primary)]" />
+            <span>Forest Sanctuary Bloom: {completedCount} of {sortedTasks.length} tasks harvested</span>
+          </span>
+          <span className="text-[var(--accent-primary)] font-bold">{progressPercent}%</span>
+        </div>
+        <div className="h-3 w-full bg-[var(--bg-surface-subtle)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
+          <div
+            className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-lime-400 rounded-full transition-all duration-500 shadow-[0_0_12px_#86efac]"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </section>
+
+      {/* 3. Immediate Workload Dump Box (Where the user unloads their mental burden first) */}
+      <section className="p-5 sm:p-6 rounded-3xl bg-[var(--bg-card)] border-2 border-[var(--border-highlight)]/70 backdrop-blur-2xl shadow-xl space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">🚌</span>
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] leading-tight">
+                Dump Your Workload First
+              </h2>
               <p className="text-xs text-[var(--text-secondary)]">
-                Dump messy thoughts, screenshot notes, or voice recordings. Soot sprites will organize them into acorns!
+                Messy is totally fine. Soot sprites will organize your thoughts into prioritized acorns!
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--accent-primary)] group-hover:translate-x-1 transition-transform shrink-0">
-            <span>Hop On Express</span>
-            <ArrowRight className="w-4 h-4" />
-          </div>
+          <button
+            onClick={() => setActiveScreen('braindump')}
+            className="hidden sm:flex items-center gap-1 text-xs text-[var(--accent-primary)] font-bold hover:underline ghibli-btn"
+          >
+            <span>Full Catbus Express</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
+
+        {/* Quick Dump Input Form */}
+        <form onSubmit={handleQuickDumpSubmit} className="space-y-3">
+          <div className="relative">
+            <textarea
+              value={quickDumpText}
+              onChange={(e) => setQuickDumpText(e.target.value)}
+              placeholder="Dump assignments, exam deadlines, lecture notes, or rough tasks here..."
+              rows={2}
+              className="w-full bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] focus:border-[var(--accent-primary)] rounded-2xl p-3.5 text-xs sm:text-sm placeholder:text-[var(--text-muted)] focus:outline-none transition-all shadow-inner resize-none font-kalam"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setActiveScreen('braindump')}
+                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 ghibli-btn"
+              >
+                <Mic className="w-3.5 h-3.5 text-red-400" />
+                <span>Voice</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveScreen('braindump')}
+                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 ghibli-btn"
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                <span>Screenshot</span>
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!quickDumpText.trim() || isDumping}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#4E8752] to-[#6BA36F] dark:from-[#5A995F] dark:to-[#74B57A] text-white dark:text-[#0C1A12] font-bold text-xs flex items-center gap-1.5 shadow-md disabled:opacity-40 disabled:cursor-not-allowed ghibli-btn"
+            >
+              {isDumping ? (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 animate-spin text-lime-300" />
+                  <span>Organizing...</span>
+                </>
+              ) : (
+                <>
+                  <span>Organize into Priorities</span>
+                  <Send className="w-3.5 h-3.5" />
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {/* 4. Sequenced Priorities: Strictly Ordered (Urgent 🌰 -> High 🍃 -> Medium 🌱 -> Low ⭐) */}
+      <section className="space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🌰</span>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
+                Sequenced Priorities
+              </h2>
+              <p className="text-xs text-[var(--text-secondary)]">
+                Ranked strictly: Urgent Acorns 🌰 &rarr; High 🍃 &rarr; Medium 🌱 &rarr; Low ⭐
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setQuickAddOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--accent-primary)] text-xs text-[var(--accent-primary)] font-bold ghibli-btn shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Priority</span>
+          </button>
+        </div>
+
+        <div className="space-y-2.5">
+          {activeTasks.length === 0 ? (
+            <div className="p-8 text-center rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-card)] backdrop-blur-xl space-y-2">
+              <span className="text-3xl">🌱</span>
+              <p className="text-base font-bold text-[var(--text-primary)]">All priorities harvested!</p>
+              <p className="text-xs text-[var(--text-secondary)]">
+                Dump your next assignment or project above to sprout new tasks.
+              </p>
+            </div>
+          ) : (
+            activeTasks.map((task) => <TaskRow key={task.id} task={task} />)
+          )}
+        </div>
+      </section>
+
+      {/* 5. Forest Spirit Recommendations */}
+      <section className="space-y-3.5">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
+          <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">
+            Forest Spirit Suggestions
+          </h2>
+        </div>
+        <AIResponseCard />
       </section>
     </div>
   );

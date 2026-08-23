@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Sparkles, X, Play, Plus } from 'lucide-react';
+import { Sparkles, X, Play, Plus, BrainCircuit } from 'lucide-react';
 import { soundManager } from '@/lib/soundEffects';
+import { TotoroCharacter } from './TotoroCharacter';
 
 type TotoroState = 'idle' | 'running' | 'jumping' | 'happy';
 
 export const TotoroEmote: React.FC = () => {
-  const { activeScreen, setQuickAddOpen, startFocusSession, tasks } = useApp();
+  const { activeScreen, setActiveScreen, setQuickAddOpen, startFocusSession, tasks } = useApp();
 
   const [state, setState] = useState<TotoroState>('idle');
   const [direction, setDirection] = useState<'right' | 'left'>('right');
@@ -21,12 +22,11 @@ export const TotoroEmote: React.FC = () => {
   const prevScreen = useRef<string>(activeScreen);
 
   const forestQuotes = [
-    'Roaaar! (Let\'s conquer your priorities today!) 🍃',
-    'The soot sprites are cheering for your focus! ✨',
-    'Did you know? Every finished task plants a sprout in your forest garden! 🌱',
-    'Remember to breathe and drink some tea under the trees 🍵',
-    'Hold your leafy umbrella high when exams approach! 🌧️',
-    'I found a golden acorn for you today! 🌰',
+    'Roaaar! (Dump your workload first, then we conquer each acorn!) 🍃',
+    'The soot sprites are ready to organize your academic tasks! ✨',
+    'Focus like the giant camphor tree — steady and unshakeable 🌱',
+    'Rain or shine, your leafy umbrella protects your progress! 🌧️',
+    'Take a breath and harvest your priorities one by one! 🌰',
   ];
 
   // 1. React to Page Jumps (Screen Changes)
@@ -36,18 +36,17 @@ export const TotoroEmote: React.FC = () => {
       setState('jumping');
       soundManager.playSparkle();
 
-      // Add celebratory star sparkles
-      const newSparkles = Array.from({ length: 5 }, (_, i) => ({
+      const newSparkles = Array.from({ length: 6 }, (_, i) => ({
         id: Date.now() + i,
-        x: Math.random() * 60 - 30,
-        y: Math.random() * -40 - 20,
+        x: Math.random() * 80 - 40,
+        y: Math.random() * -50 - 30,
       }));
       setSparkles(newSparkles);
 
       const timer = setTimeout(() => {
         setState('idle');
         setSparkles([]);
-      }, 1200);
+      }, 1000);
 
       return () => clearTimeout(timer);
     }
@@ -59,7 +58,7 @@ export const TotoroEmote: React.FC = () => {
       const currentScrollY = window.scrollY;
       const delta = currentScrollY - lastScrollY.current;
 
-      if (Math.abs(delta) > 5) {
+      if (Math.abs(delta) > 4) {
         setDirection(delta > 0 ? 'right' : 'left');
         setState('running');
 
@@ -67,7 +66,7 @@ export const TotoroEmote: React.FC = () => {
 
         scrollTimeoutRef.current = setTimeout(() => {
           setState('idle');
-        }, 350);
+        }, 300);
       }
 
       lastScrollY.current = currentScrollY;
@@ -85,23 +84,21 @@ export const TotoroEmote: React.FC = () => {
     setState('happy');
     soundManager.playClick();
 
-    // Pick random forest quote
     const randomQuote = forestQuotes[Math.floor(Math.random() * forestQuotes.length)];
     setBubbleQuote(randomQuote);
     setIsBubbleOpen(true);
 
-    // Star candy sparkles
-    const newSparkles = Array.from({ length: 6 }, (_, i) => ({
+    const newSparkles = Array.from({ length: 8 }, (_, i) => ({
       id: Date.now() + i,
-      x: Math.random() * 80 - 40,
-      y: Math.random() * -60 - 20,
+      x: Math.random() * 90 - 45,
+      y: Math.random() * -70 - 20,
     }));
     setSparkles(newSparkles);
 
     setTimeout(() => {
       setState('idle');
       setSparkles([]);
-    }, 1500);
+    }, 1600);
   };
 
   const pendingUrgent = tasks.filter((t) => !t.isCompleted && t.priority === 'urgent').length;
@@ -110,11 +107,11 @@ export const TotoroEmote: React.FC = () => {
     <div className="fixed bottom-16 md:bottom-6 right-4 md:right-8 z-50 select-none font-kalam pointer-events-auto">
       {/* Interactive Speech Bubble */}
       {isBubbleOpen && (
-        <div className="absolute bottom-24 right-0 w-64 p-4 rounded-3xl bg-[var(--bg-surface)] backdrop-blur-2xl border-2 border-[var(--border-highlight)] shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-left space-y-2.5 z-20">
+        <div className="absolute bottom-32 right-0 w-72 p-4.5 rounded-3xl bg-[var(--bg-surface)] backdrop-blur-2xl border-2 border-[var(--border-highlight)] shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-left space-y-3 z-20">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--accent-primary)]">
               <span>🍃</span>
-              <span>Totoro says:</span>
+              <span>Totoro Forest Spirit</span>
             </div>
             <button
               onClick={(e) => {
@@ -131,17 +128,17 @@ export const TotoroEmote: React.FC = () => {
             &ldquo;{bubbleQuote}&rdquo;
           </p>
 
-          {/* Quick Shortcuts */}
-          <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between gap-1.5 text-[11px]">
+          {/* Quick Action Shortcuts */}
+          <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2 text-[11px]">
             <button
               onClick={() => {
-                setQuickAddOpen(true);
+                setActiveScreen('braindump');
                 setIsBubbleOpen(false);
               }}
-              className="px-2.5 py-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--accent-primary)] text-[var(--text-primary)] font-bold flex items-center gap-1 ghibli-btn"
+              className="px-2.5 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--accent-primary)] text-[var(--text-primary)] font-bold flex items-center gap-1 ghibli-btn shadow-sm"
             >
-              <Plus className="w-3 h-3 text-[var(--accent-primary)]" />
-              <span>Plant Seed</span>
+              <BrainCircuit className="w-3.5 h-3.5 text-amber-400" />
+              <span>Dump Workload</span>
             </button>
 
             <button
@@ -149,9 +146,9 @@ export const TotoroEmote: React.FC = () => {
                 startFocusSession();
                 setIsBubbleOpen(false);
               }}
-              className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold flex items-center gap-1 shadow-sm ghibli-btn"
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold flex items-center gap-1 shadow-md ghibli-btn"
             >
-              <Play className="w-3 h-3 fill-current" />
+              <Play className="w-3.5 h-3.5 fill-current" />
               <span>Rain Focus</span>
             </button>
           </div>
@@ -173,61 +170,28 @@ export const TotoroEmote: React.FC = () => {
         </div>
       ))}
 
-      {/* Totoro Emote Avatar Figure */}
+      {/* Animated Interactive Totoro Character Figure */}
       <div
         onClick={handleTotoroClick}
         className="group relative cursor-pointer flex flex-col items-center"
       >
         {/* Urgent Task Notification Leaf Badge on Totoro */}
         {pendingUrgent > 0 && (
-          <div className="absolute -top-2 -right-1 z-10 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-[0_0_8px_#ef4444] animate-bounce flex items-center gap-0.5">
+          <div className="absolute -top-1 -right-2 z-20 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-[0_0_8px_#ef4444] animate-bounce flex items-center gap-0.5">
             <span>🌰</span>
-            <span>{pendingUrgent}</span>
+            <span>{pendingUrgent} urgent</span>
           </div>
         )}
 
-        {/* Emote Sprite Box */}
-        <div
-          className={`w-20 h-20 sm:w-24 sm:h-24 rounded-3xl overflow-hidden border-2 border-emerald-400/40 bg-[#E8F1F2]/80 backdrop-blur-md shadow-2xl transition-all duration-300 ${
-            state === 'running'
-              ? 'scale-110 -translate-y-2'
-              : state === 'jumping'
-              ? 'scale-125 -translate-y-6 rotate-6 shadow-[0_0_25px_#a3e635]'
-              : state === 'happy'
-              ? 'scale-115 -translate-y-3'
-              : 'hover:scale-110 hover:-translate-y-1'
-          }`}
-          style={{
-            transform: direction === 'left' ? 'scaleX(-1)' : 'scaleX(1)',
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={
-              state === 'running'
-                ? '/assets/ghibli/totoro_running.jpg'
-                : state === 'jumping'
-                ? '/assets/ghibli/totoro_jumping.jpg'
-                : '/assets/ghibli/totoro_hero.jpg'
-            }
-            alt="Totoro Emote"
-            className="w-full h-full object-cover select-none pointer-events-none"
-          />
-        </div>
-
-        {/* Shadow / Dust Puff Effect under Totoro */}
-        <div
-          className={`h-2 rounded-full bg-black/30 blur-sm transition-all duration-200 mt-1 ${
-            state === 'running'
-              ? 'w-16 translate-x-1'
-              : state === 'jumping'
-              ? 'w-8 opacity-20'
-              : 'w-14'
-          }`}
+        {/* Vector Animated Totoro Character */}
+        <TotoroCharacter
+          state={state}
+          direction={direction}
+          className="transition-transform duration-200 group-hover:scale-105"
         />
 
         {/* Cute label on hover */}
-        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold text-[var(--accent-primary)] bg-[var(--bg-surface)] px-2 py-0.5 rounded-full border border-[var(--border-subtle)] shadow-sm mt-0.5">
+        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold text-[var(--accent-primary)] bg-[var(--bg-surface)] px-2.5 py-0.5 rounded-full border border-[var(--border-subtle)] shadow-sm -mt-1 z-10">
           Pet Totoro 🍃
         </span>
       </div>
