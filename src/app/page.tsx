@@ -11,6 +11,9 @@ import { WeekPlanScreen } from '@/screens/WeekPlanScreen';
 import { TasksScreen } from '@/screens/TasksScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
 
+// Dynamic Totoro Emote Companion
+import { TotoroEmote } from '@/components/companion/TotoroEmote';
+
 // Command Center Modals
 import { TaskDetailModal } from '@/components/tasks/TaskDetailModal';
 import { QuickAddTaskModal } from '@/components/tasks/QuickAddTaskModal';
@@ -74,10 +77,13 @@ export default function AppMain() {
         </main>
       </div>
 
-      {/* 3. Mobile Bottom Navigation */}
+      {/* 3. Dynamic Interactive Totoro Companion */}
+      <TotoroEmote />
+
+      {/* 4. Mobile Bottom Navigation */}
       <BottomNav />
 
-      {/* 4. Global Modals */}
+      {/* 5. Global Modals */}
       <TaskDetailModal />
       <QuickAddTaskModal />
       <ExhaustionModal />
