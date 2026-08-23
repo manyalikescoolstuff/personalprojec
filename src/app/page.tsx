@@ -24,15 +24,43 @@ export default function AppMain() {
 
   return (
     <div
-      className={`flex min-h-screen font-kalam antialiased transition-colors duration-200 ${
-        isDark ? 'bg-[#0A0F0D] text-[#F3F4F1]' : 'bg-[#FFFFFF] text-[#111827]'
+      className={`relative flex min-h-screen font-kalam antialiased transition-all duration-300 ${
+        isDark ? 'ghibli-bg-night text-[#F4F7F6]' : 'ghibli-bg-day text-[#2C2218]'
       }`}
     >
+      {/* Ambient Forest Particles Overlay */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-70">
+        <div
+          className={`absolute top-12 left-1/4 w-2.5 h-2.5 rounded-full ${
+            isDark ? 'bg-lime-300 shadow-[0_0_12px_#bef264] animate-firefly' : 'bg-amber-200/80 animate-ghibli-float'
+          }`}
+          style={{ animationDelay: '0.2s', animationDuration: '3.5s' }}
+        />
+        <div
+          className={`absolute top-1/3 right-1/5 w-2 h-2 rounded-full ${
+            isDark ? 'bg-cyan-200 shadow-[0_0_10px_#a5f3fc] animate-firefly' : 'bg-emerald-300/60 animate-leaf-sway'
+          }`}
+          style={{ animationDelay: '1.2s', animationDuration: '4s' }}
+        />
+        <div
+          className={`absolute bottom-24 left-1/3 w-3 h-3 rounded-full ${
+            isDark ? 'bg-amber-300 shadow-[0_0_14px_#fde047] animate-firefly' : 'bg-yellow-200/70 animate-ghibli-float'
+          }`}
+          style={{ animationDelay: '2s', animationDuration: '5s' }}
+        />
+        <div
+          className={`absolute top-2/3 right-1/3 w-2 h-2 rounded-full ${
+            isDark ? 'bg-emerald-300 shadow-[0_0_10px_#86efac] animate-firefly' : 'bg-green-300/50 animate-leaf-sway'
+          }`}
+          style={{ animationDelay: '0.8s', animationDuration: '3.2s' }}
+        />
+      </div>
+
       {/* 1. Desktop Left Sidebar */}
       <Sidebar />
 
       {/* 2. Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="relative z-10 flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Top Header */}
         <AppHeader />
 

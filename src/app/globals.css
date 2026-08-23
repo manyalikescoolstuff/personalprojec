@@ -10,55 +10,75 @@
 
 @layer base {
   :root {
-    /* Dark Mode (Default) - Calm, Expensive & Intentional Workspace */
-    --bg-app: #0A0F0D;
-    --bg-surface: #111816;
-    --bg-card: #151D1A;
-    --bg-surface-elevated: #18221E;
-    --bg-surface-subtle: #0D1311;
-    --border-subtle: #1E2824;
-    --border-highlight: #283630;
+    /* Night Mode (Default) - Totoro Starlit Forest Tree Canopy */
+    --bg-app: #081018;
+    --bg-overlay: rgba(8, 16, 24, 0.82);
+    --bg-surface: rgba(15, 28, 44, 0.85);
+    --bg-card: rgba(22, 38, 58, 0.78);
+    --bg-card-hover: rgba(28, 48, 72, 0.88);
+    --bg-surface-elevated: rgba(30, 52, 78, 0.85);
+    --bg-surface-subtle: rgba(11, 20, 32, 0.75);
+    
+    --border-subtle: rgba(147, 197, 253, 0.15);
+    --border-highlight: rgba(158, 216, 163, 0.35);
+    --border-wood: rgba(180, 140, 100, 0.3);
     
     --accent-primary: #9ED8A3;
-    --accent-primary-hover: #B2E2B6;
-    --accent-secondary: #3D4A3E;
-    --accent-soft: rgba(158, 216, 163, 0.12);
+    --accent-primary-hover: #B8E6BD;
+    --accent-secondary: #7DD3FC;
+    --accent-acorn: #F59E0B;
+    --accent-leaf: #84CC16;
+    --accent-candy: #F472B6;
+    --accent-soft: rgba(158, 216, 163, 0.16);
     
-    --text-primary: #F3F4F1;
-    --text-secondary: #8C9E90;
-    --text-muted: #55665A;
+    --text-primary: #F4F7F6;
+    --text-secondary: #A3B8C8;
+    --text-muted: #6B8296;
     --text-accent: #9ED8A3;
+    --text-acorn: #FBBF24;
     
-    --status-urgent: #E07A7A;
-    --status-urgent-soft: rgba(224, 122, 122, 0.12);
-    --status-warning: #D8B07A;
+    --status-urgent: #F87171;
+    --status-urgent-soft: rgba(248, 113, 113, 0.18);
+    --status-warning: #FBBF24;
     --status-active: #9ED8A3;
+    
+    --shadow-ghibli: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 20px 0 rgba(158, 216, 163, 0.08);
   }
 
   .light {
-    /* Light Mode - Pure White, Editorial, Airy & Productive */
-    --bg-app: #FFFFFF;
-    --bg-surface: #F8FAFC;
-    --bg-card: #FFFFFF;
-    --bg-surface-elevated: #F8FAFC;
-    --bg-surface-subtle: #F1F5F9;
-    --border-subtle: #E2E8F0;
-    --border-highlight: #CBD5E1;
+    /* Day Mode - Sun-Drenched Studio Ghibli Forest Glade */
+    --bg-app: #F5F1E6;
+    --bg-overlay: rgba(250, 246, 235, 0.84);
+    --bg-surface: rgba(255, 252, 244, 0.92);
+    --bg-card: rgba(255, 254, 248, 0.88);
+    --bg-card-hover: rgba(255, 255, 255, 0.96);
+    --bg-surface-elevated: rgba(255, 255, 255, 0.95);
+    --bg-surface-subtle: rgba(244, 238, 224, 0.85);
     
-    --accent-primary: #2563EB;
-    --accent-primary-hover: #1D4ED8;
-    --accent-secondary: #EFF6FF;
-    --accent-soft: #EFF6FF;
+    --border-subtle: rgba(120, 95, 70, 0.18);
+    --border-highlight: rgba(78, 135, 82, 0.4);
+    --border-wood: rgba(150, 105, 65, 0.35);
     
-    --text-primary: #111827;
-    --text-secondary: #64748B;
-    --text-muted: #94A3B8;
-    --text-accent: #2563EB;
+    --accent-primary: #2D5A27;
+    --accent-primary-hover: #1E401A;
+    --accent-secondary: #0284C7;
+    --accent-acorn: #D97706;
+    --accent-leaf: #4D7C0F;
+    --accent-candy: #DB2777;
+    --accent-soft: rgba(45, 90, 39, 0.12);
+    
+    --text-primary: #2C2218;
+    --text-secondary: #6B5744;
+    --text-muted: #9C8975;
+    --text-accent: #2D5A27;
+    --text-acorn: #B45309;
     
     --status-urgent: #DC2626;
-    --status-urgent-soft: rgba(220, 38, 38, 0.08);
+    --status-urgent-soft: rgba(220, 38, 38, 0.12);
     --status-warning: #D97706;
-    --status-active: #2563EB;
+    --status-active: #2D5A27;
+    
+    --shadow-ghibli: 0 10px 25px -5px rgba(80, 60, 40, 0.12), 0 0 15px 0 rgba(78, 135, 82, 0.1);
   }
 
   body {
@@ -66,7 +86,25 @@
     color: var(--text-primary);
     font-family: var(--font-hangyaboly), 'Hangyaboly', cursive, sans-serif;
     overflow-x: hidden;
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
   }
+}
+
+/* Background Atmosphere layers */
+.ghibli-bg-night {
+  background-image: linear-gradient(to bottom, rgba(8, 16, 26, 0.88), rgba(12, 24, 38, 0.84)), url('/assets/ghibli/forest_night.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.ghibli-bg-day {
+  background-image: linear-gradient(to bottom, rgba(248, 244, 232, 0.88), rgba(242, 236, 220, 0.84)), url('/assets/ghibli/forest_day.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 /* Typography Utility Classes */
@@ -80,23 +118,59 @@
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
 }
 
+/* Ghibli Glassmorphism & Parchment Cards */
+.ghibli-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: var(--shadow-ghibli);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.ghibli-card:hover {
+  border-color: var(--border-highlight);
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.45), 0 0 24px 0 var(--accent-soft);
+}
+
+.ghibli-card-elevated {
+  background: var(--bg-surface-elevated);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-highlight);
+  border-radius: 20px;
+  box-shadow: var(--shadow-ghibli);
+}
+
+/* Storybook Woodcraft Banner */
+.ghibli-wood {
+  background: linear-gradient(135deg, rgba(42, 30, 20, 0.85), rgba(64, 46, 32, 0.85));
+  border: 1px solid rgba(180, 140, 100, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 8px 20px -4px rgba(0, 0, 0, 0.4);
+}
+
 /* Raycast / Spotlight Command Container */
 .command-container {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: var(--bg-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: var(--shadow-ghibli);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .command-container:focus-within {
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 1px var(--accent-soft);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 12px 30px -5px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
 }
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -104,26 +178,79 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
-  border-radius: 4px;
+  background: var(--border-highlight);
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-highlight);
+  background: var(--accent-primary);
 }
 
-/* Micro-transitions & Pulse */
-@keyframes calmPulse {
+/* Ghibli Floating & Firefly Animations */
+@keyframes ghibliFloat {
   0%, 100% {
-    opacity: 1;
-    transform: scale(1);
+    transform: translateY(0px) rotate(0deg);
   }
   50% {
-    opacity: 0.7;
-    transform: scale(0.98);
+    transform: translateY(-6px) rotate(1.5deg);
   }
 }
 
-.animate-calm-pulse {
-  animation: calmPulse 3s ease-in-out infinite;
+@keyframes fireflyPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 8px rgba(163, 230, 53, 0.8));
+  }
+}
+
+@keyframes sootBlink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes leafSway {
+  0%, 100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+.animate-ghibli-float {
+  animation: ghibliFloat 4s ease-in-out infinite;
+}
+
+.animate-firefly {
+  animation: fireflyPulse 2.5s ease-in-out infinite;
+}
+
+.animate-leaf-sway {
+  animation: leafSway 3s ease-in-out infinite;
+}
+
+.animate-soot-blink {
+  animation: sootBlink 4s infinite;
+}
+
+/* Tactile bouncy buttons */
+.ghibli-btn {
+  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ghibli-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.ghibli-btn:active {
+  transform: translateY(1px) scale(0.97);
 }

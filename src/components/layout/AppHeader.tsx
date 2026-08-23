@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sun, Moon, Plus, Cloud, Database } from 'lucide-react';
+import { Sun, Moon, Plus, Cloud, Sparkles } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
 export const AppHeader: React.FC = () => {
@@ -21,13 +21,15 @@ export const AppHeader: React.FC = () => {
     (t) => !t.isCompleted && (t.priority === 'urgent' || t.priority === 'high')
   ).length;
 
-  const screenTitles: Record<string, string> = {
-    home: 'Command Center',
-    braindump: 'Brain Dump',
-    plan: 'Weekly Plan',
-    tasks: 'Tasks',
-    settings: 'Settings',
+  const screenTitles: Record<string, { title: string; icon: string; subtitle: string }> = {
+    home: { title: 'Forest Sanctuary', icon: '🏡', subtitle: 'Totoro Command Center' },
+    braindump: { title: 'Catbus Brain Express', icon: '🚌', subtitle: 'Thought Organizer' },
+    plan: { title: 'Weekly Focus Glade', icon: '🌿', subtitle: 'Day & Night Rhythm' },
+    tasks: { title: 'Acorn Priorities', icon: '🌰', subtitle: 'Actionable Tasks' },
+    settings: { title: 'Spirits & Preferences', icon: '🍃', subtitle: 'Workspace Config' },
   };
+
+  const currentMeta = screenTitles[activeScreen] || screenTitles.home;
 
   const todayDate = React.useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -39,24 +41,25 @@ export const AppHeader: React.FC = () => {
   }, []);
 
   return (
-    <header className="flex items-center justify-between px-4 sm:px-8 py-3.5 border-b border-[#1E2824] bg-[#0A0F0D]/90 backdrop-blur-md sticky top-0 z-30 font-kalam text-[#F3F4F1] dark:bg-[#0A0F0D]/90 dark:border-[#1E2824] dark:text-[#F3F4F1] light:bg-[#FFFFFF]/90 light:border-[#E2E8F0] light:text-[#111827]">
+    <header className="flex items-center justify-between px-4 sm:px-8 py-3.5 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] backdrop-blur-2xl sticky top-0 z-30 font-kalam text-[var(--text-primary)] transition-colors shadow-sm">
       {/* Left: Screen breadcrumb & Date */}
       <div className="flex items-center gap-3">
-        <div className="md:hidden flex items-center gap-1.5 font-semibold text-xs tracking-tight text-[#9ED8A3] dark:text-[#9ED8A3] light:text-[#2563EB]">
-          <span>GetDone</span>
+        <div className="md:hidden flex items-center gap-1.5 font-bold text-sm tracking-tight text-[var(--accent-primary)]">
+          <span>🌿 GetDone</span>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 text-xs">
+        <div className="hidden md:flex items-center gap-2.5 text-xs">
           <span
             suppressHydrationWarning
-            className="text-[#8C9E90] dark:text-[#8C9E90] light:text-[#64748B]"
+            className="text-[var(--text-secondary)] font-medium"
           >
-            {todayDate}
+            🗓️ {todayDate}
           </span>
-          <span className="text-[#3D4A3E] dark:text-[#3D4A3E] light:text-[#CBD5E1]">/</span>
-          <span className="text-[#F3F4F1] dark:text-[#F3F4F1] light:text-[#111827] font-medium">
-            {screenTitles[activeScreen] || 'Command Center'}
-          </span>
+          <span className="text-[var(--text-muted)]">/</span>
+          <div className="flex items-center gap-1.5 text-[var(--text-primary)] font-bold">
+            <span>{currentMeta.icon}</span>
+            <span>{currentMeta.title}</span>
+          </div>
         </div>
       </div>
 
@@ -65,21 +68,17 @@ export const AppHeader: React.FC = () => {
         {/* Firebase Cloud Sync Indicator */}
         <button
           onClick={() => setAuthModalOpen(true)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border transition-colors ${
-            authUser
-              ? 'bg-[#15231B] border-[#254231] text-[#9ED8A3] hover:bg-[#1A2D22]'
-              : 'bg-[#151D1A] border-[#1E2824] text-[#8C9E90] hover:text-[#F3F4F1] hover:bg-[#1A2420]'
-          }`}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border border-[var(--border-subtle)] bg-[var(--bg-card)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all ghibli-btn shadow-sm"
           title={authUser ? `Logged in: ${authUser.email || 'Guest'} (Cloud Synced)` : 'Click to connect Firebase Cloud'}
         >
-          <Cloud className="w-3.5 h-3.5" />
+          <Cloud className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
           <span className="hidden sm:inline">
             {authUser ? (authUser.displayName ? authUser.displayName.split(' ')[0] : 'Cloud Synced') : 'Sync Backend'}
           </span>
           <span
-            className={`w-1.5 h-1.5 rounded-full ${
+            className={`w-2 h-2 rounded-full ${
               syncStatus === 'synced'
-                ? 'bg-[#84CC16]'
+                ? 'bg-lime-400 shadow-[0_0_8px_#a3e635]'
                 : syncStatus === 'syncing'
                 ? 'bg-amber-400 animate-pulse'
                 : 'bg-zinc-500'
@@ -88,27 +87,27 @@ export const AppHeader: React.FC = () => {
         </button>
 
         {pendingUrgentCount > 0 && (
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-[#151D1A] border border-[#1E2824] text-[#8C9E90] dark:bg-[#151D1A] dark:border-[#1E2824] dark:text-[#8C9E90] light:bg-[#EFF6FF] light:border-[#BFDBFE] light:text-[#2563EB]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#E07A7A] dark:bg-[#E07A7A] light:bg-[#DC2626]" />
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-red-500/15 border border-red-500/30 text-red-400 font-medium">
+            <span>🌰</span>
             <span>{pendingUrgentCount} priority today</span>
           </div>
         )}
 
         <button
           onClick={() => setQuickAddOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs bg-[#9ED8A3] text-[#0A0F0D] hover:bg-[#B2E2B6] font-medium transition-colors dark:bg-[#9ED8A3] dark:text-[#0A0F0D] light:bg-[#2563EB] light:text-white light:hover:bg-[#1D4ED8]"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs bg-gradient-to-r from-[#4E8752] to-[#6BA36F] dark:from-[#5A995F] dark:to-[#74B57A] text-white dark:text-[#0C1A12] font-bold transition-all shadow-md ghibli-btn"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>Add Task</span>
+          <span>New Seed</span>
         </button>
 
         {/* Mobile Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="md:hidden p-1.5 rounded text-[#8C9E90] hover:text-[#F3F4F1] hover:bg-[#151D1A] transition-colors dark:text-[#8C9E90] dark:hover:text-[#F3F4F1] light:text-[#64748B] light:hover:text-[#111827]"
+          className="md:hidden p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-soft)] transition-colors ghibli-btn"
           aria-label="Toggle theme"
         >
-          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-500" />}
         </button>
       </div>
     </header>

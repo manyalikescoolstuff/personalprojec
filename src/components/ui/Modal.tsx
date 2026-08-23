@@ -41,27 +41,30 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Calm backdrop */}
+      {/* Forest ambiance backdrop */}
       <div
-        className="fixed inset-0 bg-[#0A0F0D]/80 backdrop-blur-sm transition-opacity dark:bg-[#0A0F0D]/80 light:bg-[#000000]/30"
+        className="fixed inset-0 bg-[#081018]/75 backdrop-blur-md transition-opacity"
         onClick={onClose}
       />
 
-      {/* Modal dialog */}
+      {/* Storybook modal dialog */}
       <div
-        className={`relative z-10 w-full ${maxWidthStyles[maxWidth]} bg-[#151D1A] border border-[#1E2824] rounded-lg shadow-2xl overflow-hidden font-kalam text-[#F3F4F1] dark:bg-[#151D1A] dark:border-[#1E2824] dark:text-[#F3F4F1] light:bg-[#FFFFFF] light:border-[#E2E8F0] light:text-[#111827] animate-in fade-in zoom-in-95 duration-150`}
+        className={`relative z-10 w-full ${maxWidthStyles[maxWidth]} bg-[var(--bg-card)] border-2 border-[var(--border-subtle)] rounded-3xl shadow-2xl overflow-hidden font-kalam text-[var(--text-primary)] animate-in fade-in zoom-in-95 duration-200 backdrop-blur-2xl`}
         role="dialog"
         aria-modal="true"
       >
         {(title || subtitle) && (
-          <div className="flex items-start justify-between p-5 border-b border-[#1E2824] dark:border-[#1E2824] light:border-[#E2E8F0]">
-            <div>
-              {title && <h2 className="text-lg font-medium tracking-tight text-[#F3F4F1] dark:text-[#F3F4F1] light:text-[#111827]">{title}</h2>}
-              {subtitle && <p className="text-xs text-[#8C9E90] dark:text-[#8C9E90] light:text-[#64748B] mt-0.5">{subtitle}</p>}
+          <div className="flex items-start justify-between p-5 sm:p-6 border-b border-[var(--border-subtle)] bg-[var(--bg-surface-subtle)]/60">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">🍃</span>
+              <div>
+                {title && <h2 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">{title}</h2>}
+                {subtitle && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1 rounded-md text-[#8C9E90] hover:text-[#F3F4F1] hover:bg-[#18221E] transition-colors dark:text-[#8C9E90] dark:hover:text-[#F3F4F1] dark:hover:bg-[#18221E] light:text-[#64748B] light:hover:text-[#111827] light:hover:bg-[#F1F5F9]"
+              className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-soft)] transition-colors ghibli-btn"
               aria-label="Close modal"
             >
               <X className="w-4 h-4" />
@@ -69,7 +72,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         )}
 
-        <div className="p-5">{children}</div>
+        <div className="p-5 sm:p-6">{children}</div>
       </div>
     </div>
   );

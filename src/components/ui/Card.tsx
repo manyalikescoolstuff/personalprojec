@@ -2,7 +2,7 @@ import React from 'react';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
-  variant?: 'default' | 'elevated' | 'subtle' | 'accent' | 'command';
+  variant?: 'default' | 'elevated' | 'subtle' | 'accent' | 'command' | 'wood' | 'parchment';
   className?: string;
 }
 
@@ -14,20 +14,24 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const variantStyles = {
     default:
-      'bg-[#151D1A] border border-[#1E2824] dark:bg-[#151D1A] dark:border-[#1E2824] light:bg-[#FFFFFF] light:border-[#E2E8F0]',
+      'bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-subtle)] shadow-[var(--shadow-ghibli)] hover:border-[var(--border-highlight)] transition-all duration-200',
     elevated:
-      'bg-[#18221E] border border-[#283630] shadow-sm dark:bg-[#18221E] dark:border-[#283630] light:bg-[#FFFFFF] light:border-[#E2E8F0] light:shadow-sm',
+      'bg-[var(--bg-surface-elevated)] backdrop-blur-2xl border border-[var(--border-highlight)] shadow-[var(--shadow-ghibli)] transition-all duration-200',
     subtle:
-      'bg-[#111816] border border-[#1E2824] dark:bg-[#111816] dark:border-[#1E2824] light:bg-[#F8FAFC] light:border-[#E2E8F0]',
+      'bg-[var(--bg-surface-subtle)] backdrop-blur-md border border-[var(--border-subtle)]/60 transition-all duration-200',
     accent:
-      'bg-[#151D1A] border border-[#9ED8A3]/40 dark:bg-[#151D1A] dark:border-[#9ED8A3]/40 light:bg-[#EFF6FF] light:border-[#BFDBFE]',
+      'bg-[var(--bg-card)] backdrop-blur-xl border-2 border-[var(--accent-primary)]/50 shadow-[0_0_20px_rgba(158,216,163,0.15)] transition-all duration-200',
     command:
-      'bg-[#111816] border border-[#1E2824] hover:border-[#9ED8A3]/60 transition-colors duration-150 dark:bg-[#111816] dark:border-[#1E2824] light:bg-[#FFFFFF] light:border-[#E2E8F0] light:hover:border-[#2563EB]/60',
+      'bg-[var(--bg-surface)] backdrop-blur-2xl border border-[var(--border-subtle)] hover:border-[var(--accent-primary)] shadow-lg transition-all duration-200',
+    wood:
+      'bg-gradient-to-br from-[#2D1E14]/90 to-[#422C1D]/90 border border-[#8C6239]/40 text-[#F5EBE0] shadow-xl',
+    parchment:
+      'bg-[#FAF6EC]/90 dark:bg-[#1A2634]/90 border border-[#D4C3A3] dark:border-[#3D5266] shadow-md',
   };
 
   return (
     <div
-      className={`rounded-lg p-4 sm:p-5 text-[#F3F4F1] dark:text-[#F3F4F1] light:text-[#111827] ${variantStyles[variant]} ${className}`}
+      className={`rounded-2xl p-4 sm:p-5.5 text-[var(--text-primary)] ${variantStyles[variant]} ${className}`}
       {...props}
     >
       {children}

@@ -7,6 +7,7 @@ import {
   Image as ImageIcon,
   ArrowRight,
   CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { BrainDumpInput } from '@/components/braindump/BrainDumpInput';
@@ -101,20 +102,16 @@ export const BrainDumpScreen: React.FC = () => {
   const handleStartOrganizing = () => {
     if (!hasAnyInput) return;
 
-    // 1. Create and save raw Brain Dump record (never destroyed)
     const rawDump = brainDumpService.createRawDump(inputText, voiceTranscript, screenshots);
     setCurrentDump(rawDump);
     addBrainDumpRecord(rawDump);
-
-    // 2. Set phase to processing
     setPhase('processing');
   };
 
-  // Step 2 of processing completed
+  // Processing completed
   const handleProcessingComplete = useCallback(async () => {
     if (!currentDump) return;
 
-    // Run multi-modal / vision processor
     const { dump: processedDump, result } = await brainDumpService.process(
       currentDump,
       inputText,
@@ -126,7 +123,6 @@ export const BrainDumpScreen: React.FC = () => {
     setAnalysisResult(result);
     addBrainDumpRecord(processedDump);
 
-    // Clear saved draft once processed
     brainDumpService.clearDraft();
     setActiveDraft(null);
 
@@ -170,13 +166,12 @@ export const BrainDumpScreen: React.FC = () => {
     });
   };
 
-  // Accept single item from review
+  // Accept single item
   const handleAcceptSingleItem = (item: ExtractedBrainItem) => {
     if (!currentDump || !analysisResult) return;
 
     acceptExtractedItem(currentDump.id, item);
 
-    // Update item as accepted in review
     const updatedItems = analysisResult.items.map((i) =>
       i.id === item.id ? { ...i, isAccepted: true, selected: false } : i
     );
@@ -187,7 +182,7 @@ export const BrainDumpScreen: React.FC = () => {
     });
   };
 
-  // Accept all / selected items
+  // Accept all selected
   const handleConfirmAddEverything = () => {
     if (!currentDump || !analysisResult) return;
 
@@ -201,7 +196,6 @@ export const BrainDumpScreen: React.FC = () => {
     setAddedItemCount(unacceptedSelected.length);
     setPhase('success');
 
-    // Reset input fields
     setInputText('');
     setVoiceTranscript('');
     setScreenshots([]);
@@ -216,17 +210,20 @@ export const BrainDumpScreen: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-7 pb-20 font-kalam">
-      {/* 1. Notebook Header */}
+      {/* 1. Catbus Express Header */}
       <section className="space-y-1.5 pt-2">
-        <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#F3F4F1] dark:text-[#F3F4F1] light:text-[#111827]">
-          Dump everything here.
-        </h1>
-        <p className="text-sm sm:text-base text-[#8C9E90] dark:text-[#8C9E90] light:text-[#64748B] leading-relaxed">
-          Tasks, ideas, reminders, screenshots, random thoughts. Don&apos;t organize anything. I&apos;ll handle that.
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🚌</span>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+            Catbus Brain Express
+          </h1>
+        </div>
+        <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
+          Dump academic chaos, screenshot slides, voice notes, and thoughts. The soot sprites &amp; forest spirits will organize them into acorns and schedule blocks!
         </p>
       </section>
 
-      {/* 2. Draft Recovery Prompt (when active draft exists) */}
+      {/* 2. Draft Recovery Prompt */}
       {activeDraft && phase === 'input' && !hasAnyInput && (
         <BrainDumpDraftPrompt
           draftSnippet={
@@ -268,16 +265,16 @@ export const BrainDumpScreen: React.FC = () => {
       {/* 5. Success State View */}
       {phase === 'success' && (
         <Card variant="accent" className="p-8 text-center space-y-4 animate-in fade-in duration-300">
-          <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center bg-[#9ED8A3]/15 text-[#9ED8A3] dark:bg-[#9ED8A3]/15 dark:text-[#9ED8A3] light:bg-[#EFF6FF] light:text-[#2563EB]">
-            <CheckCircle2 className="w-6 h-6" />
+          <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center bg-lime-500/20 text-lime-400 border border-lime-400/40 text-2xl shadow-[0_0_15px_#a3e635]">
+            🍃
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-lg sm:text-xl font-medium text-[#F3F4F1] dark:text-[#F3F4F1] light:text-[#111827]">
-              Unloaded &amp; Organized
+            <h3 className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">
+              Thoughts Gathered into Acorns! 🌰
             </h3>
-            <p className="text-xs sm:text-sm text-[#8C9E90] dark:text-[#8C9E90] light:text-[#64748B] max-w-md mx-auto">
-              Added {addedItemCount} items to your workspace. Your priorities and schedule are updated.
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-md mx-auto">
+              Added {addedItemCount} items to your forest sanctuary. Your schedule and tasks have sprouted.
             </p>
           </div>
 
@@ -292,7 +289,7 @@ export const BrainDumpScreen: React.FC = () => {
                 setScreenshots([]);
               }}
             >
-              Dump Another Thought
+              Dump More Thoughts
             </Button>
 
             <Button
@@ -301,59 +298,59 @@ export const BrainDumpScreen: React.FC = () => {
               onClick={() => setActiveScreen('tasks')}
               icon={<ArrowRight className="w-3.5 h-3.5" />}
             >
-              View in Tasks
+              View in Acorn Tasks
             </Button>
           </div>
         </Card>
       )}
 
-      {/* 6. Main Multimodal Input Workspace (When in 'input' phase) */}
+      {/* 6. Main Multimodal Input Workspace */}
       {phase === 'input' && (
         <div className="space-y-5">
-          {/* Input Mode Selector Bar */}
-          <div className="flex items-center justify-between border-b border-[#1E2824] pb-2 dark:border-[#1E2824] light:border-[#E2E8F0]">
-            <div className="flex items-center gap-1.5">
+          {/* Mode Selector */}
+          <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setActiveTab('text')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ghibli-btn ${
                   activeTab === 'text'
-                    ? 'bg-[#18221E] text-[#9ED8A3] border border-[#283630] font-medium dark:bg-[#18221E] dark:text-[#9ED8A3] light:bg-[#EFF6FF] light:text-[#2563EB] light:border-[#BFDBFE]'
-                    : 'text-[#8C9E90] hover:text-[#F3F4F1] dark:text-[#8C9E90] light:text-[#64748B]'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]'
                 }`}
               >
                 <PenLine className="w-3.5 h-3.5" />
-                <span>Text</span>
-                {inputText.trim() && <span className="w-1.5 h-1.5 rounded-full bg-[#9ED8A3] dark:bg-[#9ED8A3] light:bg-[#2563EB]" />}
+                <span>Text Note</span>
+                {inputText.trim() && <span className="w-2 h-2 rounded-full bg-lime-300 shadow-[0_0_6px_#bef264]" />}
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab('voice')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ghibli-btn ${
                   activeTab === 'voice'
-                    ? 'bg-[#18221E] text-[#9ED8A3] border border-[#283630] font-medium dark:bg-[#18221E] dark:text-[#9ED8A3] light:bg-[#EFF6FF] light:text-[#2563EB] light:border-[#BFDBFE]'
-                    : 'text-[#8C9E90] hover:text-[#F3F4F1] dark:text-[#8C9E90] light:text-[#64748B]'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]'
                 }`}
               >
                 <Mic className="w-3.5 h-3.5" />
-                <span>Voice</span>
-                {voiceTranscript && <span className="w-1.5 h-1.5 rounded-full bg-[#9ED8A3] dark:bg-[#9ED8A3] light:bg-[#2563EB]" />}
+                <span>Voice Whisper</span>
+                {voiceTranscript && <span className="w-2 h-2 rounded-full bg-lime-300 shadow-[0_0_6px_#bef264]" />}
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab('screenshot')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ghibli-btn ${
                   activeTab === 'screenshot'
-                    ? 'bg-[#18221E] text-[#9ED8A3] border border-[#283630] font-medium dark:bg-[#18221E] dark:text-[#9ED8A3] light:bg-[#EFF6FF] light:text-[#2563EB] light:border-[#BFDBFE]'
-                    : 'text-[#8C9E90] hover:text-[#F3F4F1] dark:text-[#8C9E90] light:text-[#64748B]'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]'
                 }`}
               >
                 <ImageIcon className="w-3.5 h-3.5" />
-                <span>Screenshots &amp; Photos</span>
+                <span>Screenshots &amp; Slides</span>
                 {screenshots.length > 0 && (
-                  <span className="text-[10px] bg-[#9ED8A3]/20 text-[#9ED8A3] px-1.5 rounded-full dark:text-[#9ED8A3] light:bg-[#2563EB]/10 light:text-[#2563EB]">
+                  <span className="text-[10px] bg-amber-400 text-black px-1.5 py-0.2 rounded-full font-bold">
                     {screenshots.length}
                   </span>
                 )}
@@ -369,7 +366,7 @@ export const BrainDumpScreen: React.FC = () => {
                   setScreenshots([]);
                   brainDumpService.clearDraft();
                 }}
-                className="text-xs text-[#8C9E90] hover:text-[#E07A7A] transition-colors"
+                className="text-xs text-red-400 hover:underline font-bold transition-colors"
               >
                 Clear all
               </button>
@@ -382,7 +379,7 @@ export const BrainDumpScreen: React.FC = () => {
               <BrainDumpInput
                 value={inputText}
                 onChange={setInputText}
-                placeholder="Type everything. Messy is completely okay."
+                placeholder="Spill your academic thoughts, assignment deadlines, or rough study plans here..."
               />
             )}
 
@@ -406,22 +403,22 @@ export const BrainDumpScreen: React.FC = () => {
             )}
           </div>
 
-          {/* Summary of attached elements if switched to another tab */}
+          {/* Attached items notice */}
           {activeTab !== 'screenshot' && screenshots.length > 0 && (
-            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#151D1A] border border-[#1E2824] text-xs text-[#8C9E90]">
-              <ImageIcon className="w-3.5 h-3.5 text-[#9ED8A3]" />
-              <span>{screenshots.length} image attachment(s) included in this dump</span>
+            <div className="flex items-center gap-2 p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]">
+              <ImageIcon className="w-4 h-4 text-[var(--accent-primary)]" />
+              <span>{screenshots.length} screenshot image(s) ready for Vision analysis</span>
               <button
                 type="button"
                 onClick={() => setActiveTab('screenshot')}
-                className="text-[#9ED8A3] hover:underline ml-auto"
+                className="text-[var(--accent-primary)] hover:underline ml-auto font-bold"
               >
-                View attachments
+                Inspect
               </button>
             </div>
           )}
 
-          {/* Empty State Prompt if text is empty and no attachments */}
+          {/* Empty State Prompt */}
           {!hasAnyInput && activeTab === 'text' && (
             <EmptyBrainState
               onSelectPrompt={(prompt) => {
@@ -430,22 +427,23 @@ export const BrainDumpScreen: React.FC = () => {
             />
           )}
 
-          {/* Large Primary Action Button */}
+          {/* Organize Button */}
           <div className="pt-3">
             <Button
-              variant="primary"
+              variant="leaf"
               size="lg"
-              className="w-full justify-center text-base py-3.5 shadow-md"
+              className="w-full justify-center text-base py-3.5 shadow-xl font-bold"
               onClick={handleStartOrganizing}
               disabled={!hasAnyInput}
+              icon={<Sparkles className="w-4 h-4" />}
             >
-              Organize
+              Organize with Forest Spirits
             </Button>
           </div>
         </div>
       )}
 
-      {/* 7. Permanent Brain Dump History Archive */}
+      {/* 7. Archive History */}
       <BrainDumpHistory
         dumps={brainDumps}
         onDeleteDump={deleteBrainDump}

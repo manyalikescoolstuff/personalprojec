@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Check } from 'lucide-react';
+import { Play, Pause, RotateCcw, Check, Sparkles } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -77,43 +77,59 @@ export const FocusTimerModal: React.FC = () => {
     <Modal
       isOpen={isFocusTimerOpen}
       onClose={closeFocusSession}
-      title="Focus Session"
-      subtitle="Deep work interval · Distractions paused"
+      title="Totoro Rain Focus Session"
+      subtitle="Deep study interval · Calm forest rain rhythm 🌧️"
       maxWidth="sm"
     >
       <div className="space-y-6 text-center font-kalam">
         {/* Active Task Info */}
         {focusSessionTask ? (
-          <div className="bg-[#111816] border border-[#1E2824] rounded-md p-3 text-left dark:bg-[#111816] dark:border-[#1E2824] light:bg-[#F8FAFC] light:border-[#E2E8F0]">
+          <div className="bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] rounded-2xl p-4 text-left shadow-sm">
             <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-[11px] uppercase tracking-wider text-[#9ED8A3] dark:text-[#9ED8A3] light:text-[#2563EB]">
-                Target Priority
+              <span className="text-[11px] uppercase tracking-wider text-[var(--accent-primary)] font-bold flex items-center gap-1">
+                <span>🌰</span>
+                <span>Active Target Seed</span>
               </span>
             </div>
-            <h4 className="text-sm font-medium text-[#F3F4F1] dark:text-[#F3F4F1] light:text-[#111827] truncate">
+            <h4 className="text-sm font-bold text-[var(--text-primary)] truncate">
               {focusSessionTask.title}
             </h4>
           </div>
         ) : (
-          <p className="text-xs text-[#8C9E90]">Deep Focus Window</p>
+          <div className="flex items-center justify-center gap-1 text-xs text-[var(--text-secondary)]">
+            <span>🍃</span>
+            <span>Deep Sanctuary Focus Window</span>
+          </div>
         )}
 
-        {/* Minimalist Countdown Display */}
-        <div className="relative py-3 flex flex-col items-center justify-center">
-          <div className="text-5xl sm:text-6xl font-light tracking-tight text-[#F3F4F1] dark:text-[#F3F4F1] light:text-[#111827] font-sans">
+        {/* Totoro Rain Countdown Display */}
+        <div className="relative py-2 flex flex-col items-center justify-center">
+          <div className="text-5xl sm:text-6xl font-light tracking-tight text-[var(--text-primary)] font-sans">
             {formatTime(secondsLeft)}
           </div>
 
-          {/* Calm ambient breathing bar */}
-          <div className="w-48 h-1 bg-[#1E2824] rounded-full mt-4 overflow-hidden dark:bg-[#1E2824] light:bg-[#E2E8F0]">
+          {/* Gentle Forest Bloom Progress Bar */}
+          <div className="w-56 h-2 bg-[var(--bg-surface-subtle)] rounded-full mt-4 overflow-hidden border border-[var(--border-subtle)]">
             <div
-              className="h-full bg-[#9ED8A3] transition-all duration-1000 dark:bg-[#9ED8A3] light:bg-[#2563EB]"
+              className="h-full bg-gradient-to-r from-emerald-500 to-lime-400 rounded-full transition-all duration-1000 shadow-[0_0_8px_#a3e635]"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
 
-          <span className="text-xs text-[#8C9E90] mt-2 font-kalam">
-            {isActive ? 'In progress' : secondsLeft === 0 ? 'Completed' : 'Paused'}
+          <span className="text-xs text-[var(--text-secondary)] mt-2 font-kalam flex items-center gap-1">
+            {isActive ? (
+              <>
+                <span className="animate-spin text-lime-400">🌧️</span>
+                <span>Raindrops falling · Mind in flow</span>
+              </>
+            ) : secondsLeft === 0 ? (
+              <>
+                <span>✨</span>
+                <span>Sprout bloomed! Take a breath.</span>
+              </>
+            ) : (
+              <span>Paused under the leafy shelter</span>
+            )}
           </span>
         </div>
 
@@ -123,10 +139,10 @@ export const FocusTimerModal: React.FC = () => {
             <button
               key={mins}
               onClick={() => selectDuration(mins)}
-              className={`px-2.5 py-1 rounded border transition-colors ${
+              className={`px-3 py-1.5 rounded-xl border font-bold transition-all ghibli-btn ${
                 durationMinutes === mins
-                  ? 'bg-[#18221E] border-[#9ED8A3] text-[#9ED8A3] dark:bg-[#18221E] dark:text-[#9ED8A3] dark:border-[#9ED8A3] light:bg-[#EFF6FF] light:text-[#2563EB] light:border-[#BFDBFE]'
-                  : 'bg-[#111816] border-[#1E2824] text-[#8C9E90] hover:text-[#F3F4F1] dark:bg-[#111816] dark:border-[#1E2824] light:bg-[#FFFFFF] light:border-[#E2E8F0]'
+                  ? 'bg-emerald-600 text-white border-emerald-400 shadow-md'
+                  : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               {mins}m
@@ -135,7 +151,7 @@ export const FocusTimerModal: React.FC = () => {
         </div>
 
         {/* Controls */}
-        <div className="flex items-center justify-center gap-3 pt-1">
+        <div className="flex items-center justify-center gap-3 pt-2">
           <Button
             variant="secondary"
             size="sm"
@@ -146,32 +162,32 @@ export const FocusTimerModal: React.FC = () => {
           </Button>
 
           <Button
-            variant="primary"
+            variant="leaf"
             size="md"
             onClick={togglePlayPause}
-            className="w-28"
+            className="w-32"
           >
             {isActive ? (
-              <span className="flex items-center gap-1.5 justify-center">
+              <span className="flex items-center gap-2 justify-center font-bold">
                 <Pause className="w-4 h-4" />
                 Pause
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 justify-center">
-                <Play className="w-4 h-4" />
-                Start
+              <span className="flex items-center gap-2 justify-center font-bold">
+                <Play className="w-4 h-4 fill-current" />
+                Start Flow
               </span>
             )}
           </Button>
 
           {focusSessionTask && (
             <Button
-              variant="command"
+              variant="acorn"
               size="sm"
               onClick={handleMarkDone}
-              title="Complete priority"
+              title="Harvest & complete priority"
             >
-              <Check className="w-4 h-4 text-[#9ED8A3] dark:text-[#9ED8A3] light:text-[#2563EB]" />
+              <Check className="w-4 h-4" />
             </Button>
           )}
         </div>
