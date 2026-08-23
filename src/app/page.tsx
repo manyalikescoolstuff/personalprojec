@@ -11,8 +11,9 @@ import { WeekPlanScreen } from '@/screens/WeekPlanScreen';
 import { TasksScreen } from '@/screens/TasksScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
 
-// Dynamic Totoro Emote Companion
+// Dynamic Totoro Emote Companion & Glowing Fireflies
 import { TotoroEmote } from '@/components/companion/TotoroEmote';
+import { FirefliesGlow } from '@/components/ambient/FirefliesGlow';
 
 // Command Center Modals
 import { TaskDetailModal } from '@/components/tasks/TaskDetailModal';
@@ -31,33 +32,8 @@ export default function AppMain() {
         isDark ? 'ghibli-bg-night text-[#F4F7F6]' : 'ghibli-bg-day text-[#2C2218]'
       }`}
     >
-      {/* Ambient Forest Particles Overlay */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-70">
-        <div
-          className={`absolute top-12 left-1/4 w-2.5 h-2.5 rounded-full ${
-            isDark ? 'bg-lime-300 shadow-[0_0_12px_#bef264] animate-firefly' : 'bg-amber-200/80 animate-ghibli-float'
-          }`}
-          style={{ animationDelay: '0.2s', animationDuration: '3.5s' }}
-        />
-        <div
-          className={`absolute top-1/3 right-1/5 w-2 h-2 rounded-full ${
-            isDark ? 'bg-cyan-200 shadow-[0_0_10px_#a5f3fc] animate-firefly' : 'bg-emerald-300/60 animate-leaf-sway'
-          }`}
-          style={{ animationDelay: '1.2s', animationDuration: '4s' }}
-        />
-        <div
-          className={`absolute bottom-24 left-1/3 w-3 h-3 rounded-full ${
-            isDark ? 'bg-amber-300 shadow-[0_0_14px_#fde047] animate-firefly' : 'bg-yellow-200/70 animate-ghibli-float'
-          }`}
-          style={{ animationDelay: '2s', animationDuration: '5s' }}
-        />
-        <div
-          className={`absolute top-2/3 right-1/3 w-2 h-2 rounded-full ${
-            isDark ? 'bg-emerald-300 shadow-[0_0_10px_#86efac] animate-firefly' : 'bg-green-300/50 animate-leaf-sway'
-          }`}
-          style={{ animationDelay: '0.8s', animationDuration: '3.2s' }}
-        />
-      </div>
+      {/* Intense Glowing Bioluminescent Fireflies Layer */}
+      <FirefliesGlow />
 
       {/* 1. Desktop Left Sidebar */}
       <Sidebar />
@@ -68,7 +44,7 @@ export default function AppMain() {
         <AppHeader />
 
         {/* Dynamic Screen View */}
-        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+        <main className="flex-1 px-4 sm:px-6 md:px-8 py-6 max-w-6xl w-full mx-auto pb-24 md:pb-12">
           {activeScreen === 'home' && <HomeScreen />}
           {activeScreen === 'braindump' && <BrainDumpScreen />}
           {activeScreen === 'plan' && <WeekPlanScreen />}
@@ -77,13 +53,13 @@ export default function AppMain() {
         </main>
       </div>
 
-      {/* 3. Dynamic Interactive Totoro Companion */}
-      <TotoroEmote />
-
-      {/* 4. Mobile Bottom Navigation */}
+      {/* 3. Mobile Bottom Navigation */}
       <BottomNav />
 
-      {/* 5. Global Modals */}
+      {/* 4. Interactive Animated Totoro Companion */}
+      <TotoroEmote />
+
+      {/* 5. Modals & Overlays */}
       <TaskDetailModal />
       <QuickAddTaskModal />
       <ExhaustionModal />
