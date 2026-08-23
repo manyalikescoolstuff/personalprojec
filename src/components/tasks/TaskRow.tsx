@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Check, ChevronRight, Play, Sparkles } from 'lucide-react';
+import { Check, ChevronRight, Play } from 'lucide-react';
 import { Task } from '@/types';
 import { useApp } from '@/context/AppContext';
 
@@ -36,14 +36,14 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, showCategory = true }) =
   return (
     <div
       onClick={() => setSelectedTaskDetail(task)}
-      className={`group flex items-center justify-between p-3.5 sm:px-5 sm:py-3.5 rounded-2xl border transition-all duration-200 cursor-pointer backdrop-blur-xl ghibli-btn ${
+      className={`group flex items-center justify-between p-[13px] sm:px-[21px] sm:py-[13px] rounded-[21px] border transition-all duration-200 cursor-pointer backdrop-blur-xl ghibli-btn ${
         task.isCompleted
           ? 'bg-[var(--bg-surface-subtle)]/70 border-[var(--border-subtle)]/60 text-[var(--text-muted)] opacity-65'
           : 'bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--accent-primary)] text-[var(--text-primary)] shadow-sm'
       }`}
     >
       {/* Left side: Checkbox + Title + Meta */}
-      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+      <div className="flex items-center gap-[13px] min-w-0 flex-1">
         {/* Whimsical Round Nature Checkbox */}
         <button
           type="button"
@@ -55,14 +55,14 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, showCategory = true }) =
           }`}
           aria-label={task.isCompleted ? 'Mark incomplete' : 'Mark complete'}
         >
-          {task.isCompleted && <Check className="w-3 h-3 stroke-[3]" />}
+          {task.isCompleted && <Check className="w-3.5 h-3.5 stroke-[3]" />}
         </button>
 
-        {/* Task Details */}
+        {/* Task Details with Golden Ratio Typography */}
         <div className="flex flex-col min-w-0 pr-2">
           <div className="flex items-center gap-2">
             <span
-              className={`font-kalam text-sm sm:text-base tracking-normal truncate font-bold ${
+              className={`font-kalam text-golden-base sm:text-golden-md tracking-normal truncate font-bold ${
                 task.isCompleted
                   ? 'line-through text-[var(--text-muted)]'
                   : 'text-[var(--text-primary)]'
@@ -73,9 +73,9 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, showCategory = true }) =
           </div>
 
           {/* Context Line: Due time · Priority · Estimated duration · Subtasks */}
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--text-secondary)] font-kalam">
+          <div className="flex flex-wrap items-center gap-x-[8px] gap-y-0.5 text-golden-xs sm:text-golden-sm text-[var(--text-secondary)] font-kalam">
             {task.deadline && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 font-medium">
                 <span>🗓️</span>
                 <span>{task.deadline}</span>
               </span>
@@ -101,7 +101,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, showCategory = true }) =
             {totalSubtasks > 0 && (
               <>
                 <span className="text-[var(--text-muted)]">·</span>
-                <span className="text-[11px]">
+                <span className="text-golden-xs">
                   🌿 {completedSubtasksCount}/{totalSubtasks} steps
                 </span>
               </>
@@ -111,9 +111,9 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, showCategory = true }) =
       </div>
 
       {/* Right side: Category & Quick Actions */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-[8px] shrink-0">
         {showCategory && (
-          <span className="hidden sm:inline-block text-xs text-[var(--text-secondary)] font-bold px-2.5 py-0.5 rounded-full bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)]">
+          <span className="hidden sm:inline-block text-golden-xs font-bold px-[10px] py-[3px] rounded-full bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
             {task.category}
           </span>
         )}
