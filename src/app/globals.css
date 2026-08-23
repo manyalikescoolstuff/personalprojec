@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Hangyaboly';
+  src: url('/fonts/Hangyaboly.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Dark Mode (Default) - Calm, Expensive & Intentional Workspace */
+    --bg-app: #0A0F0D;
+    --bg-surface: #111816;
+    --bg-card: #151D1A;
+    --bg-surface-elevated: #18221E;
+    --bg-surface-subtle: #0D1311;
+    --border-subtle: #1E2824;
+    --border-highlight: #283630;
+    
+    --accent-primary: #9ED8A3;
+    --accent-primary-hover: #B2E2B6;
+    --accent-secondary: #3D4A3E;
+    --accent-soft: rgba(158, 216, 163, 0.12);
+    
+    --text-primary: #F3F4F1;
+    --text-secondary: #8C9E90;
+    --text-muted: #55665A;
+    --text-accent: #9ED8A3;
+    
+    --status-urgent: #E07A7A;
+    --status-urgent-soft: rgba(224, 122, 122, 0.12);
+    --status-warning: #D8B07A;
+    --status-active: #9ED8A3;
+  }
+
+  .light {
+    /* Light Mode - Pure White, Editorial, Airy & Productive */
+    --bg-app: #FFFFFF;
+    --bg-surface: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --bg-surface-elevated: #F8FAFC;
+    --bg-surface-subtle: #F1F5F9;
+    --border-subtle: #E2E8F0;
+    --border-highlight: #CBD5E1;
+    
+    --accent-primary: #2563EB;
+    --accent-primary-hover: #1D4ED8;
+    --accent-secondary: #EFF6FF;
+    --accent-soft: #EFF6FF;
+    
+    --text-primary: #111827;
+    --text-secondary: #64748B;
+    --text-muted: #94A3B8;
+    --text-accent: #2563EB;
+    
+    --status-urgent: #DC2626;
+    --status-urgent-soft: rgba(220, 38, 38, 0.08);
+    --status-warning: #D97706;
+    --status-active: #2563EB;
+  }
+
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family: var(--font-hangyaboly), 'Hangyaboly', cursive, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* Typography Utility Classes */
+.font-hangyaboly,
+.font-kalam {
+  font-family: var(--font-hangyaboly), 'Hangyaboly', cursive, sans-serif;
+}
+
+.font-sans,
+.font-inter {
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+}
+
+/* Raycast / Spotlight Command Container */
+.command-container {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.command-container:focus-within {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-highlight);
+}
+
+/* Micro-transitions & Pulse */
+@keyframes calmPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+}
+
+.animate-calm-pulse {
+  animation: calmPulse 3s ease-in-out infinite;
+}
