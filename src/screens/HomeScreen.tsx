@@ -40,56 +40,146 @@ export const HomeScreen: React.FC = () => {
   const [inPlaceScreenshots, setInPlaceScreenshots] = useState<BrainDumpAttachment[]>([]);
   const [inPlaceSuccessMsg, setInPlaceSuccessMsg] = useState<string | null>(null);
 
+  const [isTranscribingAudio, setIsTranscribingAudio] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const speechRecRef = useRef<any>(null);
+  const mediaRecRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const isVoiceActiveRef = useRef(false);
 
-  // In-place Voice Dictation Toggle
-  const toggleInPlaceVoice = () => {
+  isVoiceActiveRef.current = isVoiceActive;
+
+  // In-place Voice Dictation Toggle (Dual Engine: Web Speech API + Gemini AI Audio Transcribe)
+  const toggleInPlaceVoice = async () => {
     if (isVoiceActive) {
+      // 1. Stop SpeechRecognition
       if (speechRecRef.current) {
         try {
           speechRecRef.current.stop();
         } catch {}
       }
-      setIsVoiceActive(false);
-    } else {
-      const SpeechRecognitionClass =
-        (window as unknown as { SpeechRecognition?: any }).SpeechRecognition ||
-        (window as unknown as { webkitSpeechRecognition?: any }).webkitSpeechRecognition;
 
-      if (!SpeechRecognitionClass) {
-        alert('Voice dictation is not supported in this browser. You can type in the box directly.');
-        return;
+      // 2. Stop MediaRecorder and transcribe if text is empty
+      if (mediaRecRef.current && mediaRecRef.current.state !== 'inactive') {
+        mediaRecRef.current.stop();
       }
 
-      try {
-        const recognition = new SpeechRecognitionClass();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-IN'; // Optimized for English and Hinglish
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
 
-        let currentBase = quickDumpText ? quickDumpText.trim() + ' ' : '';
+      setIsVoiceActive(false);
 
-        recognition.onresult = (event: any) => {
-          let sessionText = '';
-          for (let i = 0; i < event.results.length; i++) {
-            sessionText += event.results[i][0].transcript + ' ';
+      // Check if we need Gemini AI audio fallback
+      setTimeout(async () => {
+        if (!quickDumpText.trim() && audioChunksRef.current.length > 0) {
+          setIsTranscribingAudio(true);
+          try {
+            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+              const base64Data = reader.result as string;
+              try {
+                const res = await fetch('/api/voice/transcribe', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    audioData: base64Data,
+                    mimeType: audioBlob.type,
+                  }),
+                });
+                if (res.ok) {
+                  const json = await res.json();
+                  if (json.transcript) {
+                    setQuickDumpText(json.transcript);
+                  }
+                }
+              } catch {}
+              setIsTranscribingAudio(false);
+            };
+          } catch {
+            setIsTranscribingAudio(false);
           }
-          setQuickDumpText((currentBase + sessionText).trim());
-        };
+        }
+      }, 300);
+    } else {
+      audioChunksRef.current = [];
+      try {
+        // Request microphone permission first
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
 
-        recognition.onerror = () => {
-          setIsVoiceActive(false);
-        };
+        // Setup MediaRecorder in parallel
+        try {
+          const mimeType = MediaRecorder.isTypeSupported('audio/webm')
+            ? 'audio/webm'
+            : MediaRecorder.isTypeSupported('audio/mp4')
+            ? 'audio/mp4'
+            : '';
+          const mr = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+          mediaRecRef.current = mr;
+          mr.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+              audioChunksRef.current.push(e.data);
+            }
+          };
+          mr.start(250);
+        } catch (e) {
+          console.warn('MediaRecorder error:', e);
+        }
 
-        recognition.onend = () => {
-          setIsVoiceActive(false);
-        };
+        // Setup SpeechRecognition
+        const SpeechRecognitionClass =
+          (window as unknown as { SpeechRecognition?: any }).SpeechRecognition ||
+          (window as unknown as { webkitSpeechRecognition?: any }).webkitSpeechRecognition;
 
-        speechRecRef.current = recognition;
-        recognition.start();
+        if (SpeechRecognitionClass) {
+          try {
+            const recognition = new SpeechRecognitionClass();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-IN'; // Indian English and Hinglish
+
+            let currentBase = quickDumpText ? quickDumpText.trim() + ' ' : '';
+
+            recognition.onresult = (event: any) => {
+              let sessionText = '';
+              for (let i = 0; i < event.results.length; i++) {
+                sessionText += event.results[i][0].transcript + ' ';
+              }
+              const combined = (currentBase + sessionText).trim();
+              if (combined) {
+                setQuickDumpText(combined);
+              }
+            };
+
+            recognition.onerror = (e: any) => {
+              if (e.error !== 'no-speech') {
+                console.warn('SpeechRecognition error:', e);
+              }
+            };
+
+            recognition.onend = () => {
+              // Smooth restart if user hasn't clicked stop
+              if (isVoiceActiveRef.current && speechRecRef.current) {
+                try {
+                  speechRecRef.current.start();
+                } catch {}
+              }
+            };
+
+            speechRecRef.current = recognition;
+            recognition.start();
+          } catch (e) {
+            console.warn('SpeechRecognition start:', e);
+          }
+        }
+
         setIsVoiceActive(true);
-      } catch {
+      } catch (err) {
+        alert('Please allow microphone permissions in your browser to dictate in voice.');
         setIsVoiceActive(false);
       }
     }
@@ -323,7 +413,9 @@ export const HomeScreen: React.FC = () => {
               value={quickDumpText}
               onChange={(e) => setQuickDumpText(e.target.value)}
               placeholder={
-                isVoiceActive
+                isTranscribingAudio
+                  ? 'Totoro is transcribing your voice with Gemini AI...'
+                  : isVoiceActive
                   ? 'Listening live... speak your thoughts in English or Hinglish!'
                   : 'Dump assignments, exam deadlines, lecture notes, or thoughts in English or Hinglish...'
               }
@@ -340,6 +432,14 @@ export const HomeScreen: React.FC = () => {
               <div className="absolute right-3 top-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-[11px] font-bold animate-pulse">
                 <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
                 <span>Listening (Hinglish/English)...</span>
+              </div>
+            )}
+
+            {/* AI Transcribing Pill */}
+            {isTranscribingAudio && (
+              <div className="absolute right-3 top-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold">
+                <Loader2 className="w-3 h-3 animate-spin text-emerald-400" />
+                <span>Transcribing Voice...</span>
               </div>
             )}
           </div>
