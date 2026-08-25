@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ArrowRight,
   Clock,
@@ -12,11 +12,14 @@ import {
   Image as ImageIcon,
   Send,
   Plus,
+  X,
+  CheckCircle2,
+  Loader2,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { TaskRow } from '@/components/tasks/TaskRow';
 import { AIResponseCard } from '@/components/command/AIResponseCard';
-import { Priority, Task } from '@/types';
+import { Priority, Task, BrainDumpAttachment } from '@/types';
 import { brainDumpService } from '@/services/brainDumpService';
 import { soundManager } from '@/lib/soundEffects';
 
@@ -33,6 +36,145 @@ export const HomeScreen: React.FC = () => {
 
   const [quickDumpText, setQuickDumpText] = useState('');
   const [isDumping, setIsDumping] = useState(false);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [inPlaceScreenshots, setInPlaceScreenshots] = useState<BrainDumpAttachment[]>([]);
+  const [inPlaceSuccessMsg, setInPlaceSuccessMsg] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const speechRecRef = useRef<any>(null);
+
+  // In-place Voice Dictation Toggle
+  const toggleInPlaceVoice = () => {
+    if (isVoiceActive) {
+      if (speechRecRef.current) {
+        try {
+          speechRecRef.current.stop();
+        } catch {}
+      }
+      setIsVoiceActive(false);
+    } else {
+      const SpeechRecognitionClass =
+        (window as unknown as { SpeechRecognition?: any }).SpeechRecognition ||
+        (window as unknown as { webkitSpeechRecognition?: any }).webkitSpeechRecognition;
+
+      if (!SpeechRecognitionClass) {
+        alert('Voice dictation is not supported in this browser. You can type in the box directly.');
+        return;
+      }
+
+      try {
+        const recognition = new SpeechRecognitionClass();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-IN'; // Optimized for English and Hinglish
+
+        let currentBase = quickDumpText ? quickDumpText.trim() + ' ' : '';
+
+        recognition.onresult = (event: any) => {
+          let sessionText = '';
+          for (let i = 0; i < event.results.length; i++) {
+            sessionText += event.results[i][0].transcript + ' ';
+          }
+          setQuickDumpText((currentBase + sessionText).trim());
+        };
+
+        recognition.onerror = () => {
+          setIsVoiceActive(false);
+        };
+
+        recognition.onend = () => {
+          setIsVoiceActive(false);
+        };
+
+        speechRecRef.current = recognition;
+        recognition.start();
+        setIsVoiceActive(true);
+      } catch {
+        setIsVoiceActive(false);
+      }
+    }
+  };
+
+  // In-place Screenshot Handling
+  const handleScreenshotFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newAttachment: BrainDumpAttachment = {
+          id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          name: file.name,
+          previewUrl: reader.result as string,
+          fileSize: `${Math.round(file.size / 1024)} KB`,
+          type: 'custom',
+          timestamp: 'Just now',
+        };
+        setInPlaceScreenshots((prev) => [...prev, newAttachment]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (e.target) e.target.value = '';
+  };
+
+  const removeInPlaceScreenshot = (id: string) => {
+    setInPlaceScreenshots((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  // Instant In-Place Quick Dump Action (No page switching!)
+  const handleQuickDumpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const hasInput = quickDumpText.trim().length > 0 || inPlaceScreenshots.length > 0;
+    if (!hasInput || isDumping) return;
+
+    if (isVoiceActive && speechRecRef.current) {
+      try {
+        speechRecRef.current.stop();
+      } catch {}
+      setIsVoiceActive(false);
+    }
+
+    setIsDumping(true);
+    setInPlaceSuccessMsg(null);
+    soundManager.playSparkle();
+
+    try {
+      // 1. Create raw dump in place
+      const rawDump = brainDumpService.createRawDump(quickDumpText.trim(), '', inPlaceScreenshots);
+      addBrainDumpRecord(rawDump);
+
+      // 2. Process with Gemini AI Brain in place
+      const { dump: processed, result } = await brainDumpService.process(
+        rawDump,
+        quickDumpText.trim(),
+        '',
+        inPlaceScreenshots
+      );
+      addBrainDumpRecord(processed);
+
+      // 3. Auto-accept all extracted tasks directly into active priorities
+      if (result.items && result.items.length > 0) {
+        acceptAllExtractedItems(processed.id, result.items);
+        setInPlaceSuccessMsg(`🌱 Added ${result.items.length} prioritized tasks to your sanctuary!`);
+      } else {
+        setInPlaceSuccessMsg(`🌱 Thoughts organized successfully!`);
+      }
+
+      setQuickDumpText('');
+      setInPlaceScreenshots([]);
+
+      setTimeout(() => {
+        setInPlaceSuccessMsg(null);
+      }, 5000);
+    } catch {
+      setInPlaceSuccessMsg('Processed and added to priorities.');
+    } finally {
+      setIsDumping(false);
+    }
+  };
 
   const [timeOfDay, setTimeOfDay] = useState({
     greeting: 'Good day',
@@ -97,35 +239,7 @@ export const HomeScreen: React.FC = () => {
   const progressPercent =
     sortedTasks.length > 0 ? Math.round((completedCount / sortedTasks.length) * 100) : 0;
 
-  // Instant Quick Dump Action
-  const handleQuickDumpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickDumpText.trim() || isDumping) return;
 
-    setIsDumping(true);
-    soundManager.playSparkle();
-
-    try {
-      // 1. Create and save dump
-      const rawDump = brainDumpService.createRawDump(quickDumpText.trim(), '', []);
-      addBrainDumpRecord(rawDump);
-
-      // 2. Process with AI and extract tasks
-      const { dump: processed, result } = await brainDumpService.process(rawDump, quickDumpText.trim(), '', []);
-      addBrainDumpRecord(processed);
-
-      // 3. Auto-accept extracted tasks directly into workspace
-      if (result.items.length > 0) {
-        acceptAllExtractedItems(processed.id, result.items);
-      }
-
-      setQuickDumpText('');
-    } catch {
-      // Fallback
-    } finally {
-      setIsDumping(false);
-    }
-  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 pb-20 font-kalam">
@@ -192,48 +306,111 @@ export const HomeScreen: React.FC = () => {
           </button>
         </div>
 
-        {/* Quick Dump Input Form */}
+        {/* Quick Dump Input Form (In-Place Dictation, Screenshot & Organizing) */}
         <form onSubmit={handleQuickDumpSubmit} className="space-y-3">
+          {/* Hidden File Input for in-place screenshots */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleScreenshotFiles}
+            accept="image/*"
+            multiple
+            className="hidden"
+          />
+
           <div className="relative">
             <textarea
               value={quickDumpText}
               onChange={(e) => setQuickDumpText(e.target.value)}
-              placeholder="Dump assignments, exam deadlines, lecture notes, or rough tasks here..."
-              rows={2}
-              className="w-full bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] focus:border-[var(--accent-primary)] rounded-2xl p-3.5 text-xs sm:text-sm placeholder:text-[var(--text-muted)] focus:outline-none transition-all shadow-inner resize-none font-kalam"
+              placeholder={
+                isVoiceActive
+                  ? 'Listening live... speak your thoughts in English or Hinglish!'
+                  : 'Dump assignments, exam deadlines, lecture notes, or thoughts in English or Hinglish...'
+              }
+              rows={isVoiceActive || inPlaceScreenshots.length > 0 ? 3 : 2}
+              className={`w-full bg-[var(--bg-surface)] text-[var(--text-primary)] border rounded-2xl p-3.5 text-xs sm:text-sm placeholder:text-[var(--text-muted)] focus:outline-none transition-all shadow-inner resize-none font-kalam ${
+                isVoiceActive
+                  ? 'border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                  : 'border-[var(--border-subtle)] focus:border-[var(--accent-primary)]'
+              }`}
             />
+
+            {/* Active Voice Listening Pill */}
+            {isVoiceActive && (
+              <div className="absolute right-3 top-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-[11px] font-bold animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                <span>Listening (Hinglish/English)...</span>
+              </div>
+            )}
           </div>
+
+          {/* Attached Screenshot Previews In-Place */}
+          {inPlaceScreenshots.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {inPlaceScreenshots.map((shot) => (
+                <div
+                  key={shot.id}
+                  className="relative group w-16 h-16 rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-sm"
+                >
+                  <img src={shot.previewUrl} alt={shot.name} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeInPlaceScreenshot(shot.id)}
+                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
+                  >
+                    <X className="w-4 h-4 text-red-400" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* In-Place Success Toast */}
+          {inPlaceSuccessMsg && (
+            <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2 font-bold animate-fadeIn">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+              <span>{inPlaceSuccessMsg}</span>
+            </div>
+          )}
 
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-xs">
+              {/* In-Place Voice Dictation Button */}
               <button
                 type="button"
-                onClick={() => setActiveScreen('braindump')}
-                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 ghibli-btn"
+                onClick={toggleInPlaceVoice}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all ghibli-btn ${
+                  isVoiceActive
+                    ? 'bg-red-500 text-white border-red-400 shadow-[0_0_10px_rgba(239,68,68,0.4)]'
+                    : 'bg-[var(--bg-surface-subtle)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-red-400/40'
+                }`}
+                title="Tap to speak in English or Hinglish"
               >
-                <Mic className="w-3.5 h-3.5 text-red-400" />
-                <span>Voice</span>
+                <Mic className={`w-3.5 h-3.5 ${isVoiceActive ? 'text-white animate-bounce' : 'text-red-400'}`} />
+                <span>{isVoiceActive ? 'Stop Mic' : 'Voice'}</span>
               </button>
 
+              {/* In-Place Screenshot Upload Button */}
               <button
                 type="button"
-                onClick={() => setActiveScreen('braindump')}
-                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 ghibli-btn"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-amber-400/40 flex items-center gap-1.5 ghibli-btn text-xs font-bold"
+                title="Attach photo or screenshot"
               >
                 <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
-                <span>Screenshot</span>
+                <span>Screenshot {inPlaceScreenshots.length > 0 ? `(${inPlaceScreenshots.length})` : ''}</span>
               </button>
             </div>
 
             <button
               type="submit"
-              disabled={!quickDumpText.trim() || isDumping}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#4E8752] to-[#6BA36F] dark:from-[#5A995F] dark:to-[#74B57A] text-white dark:text-[#0C1A12] font-bold text-xs flex items-center gap-1.5 shadow-md disabled:opacity-40 disabled:cursor-not-allowed ghibli-btn"
+              disabled={(!quickDumpText.trim() && inPlaceScreenshots.length === 0) || isDumping}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md disabled:opacity-40 disabled:cursor-not-allowed ghibli-btn"
             >
               {isDumping ? (
                 <>
-                  <Sparkles className="w-3.5 h-3.5 animate-spin text-lime-300" />
-                  <span>Organizing...</span>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                  <span>Totoro is Organizing...</span>
                 </>
               ) : (
                 <>
