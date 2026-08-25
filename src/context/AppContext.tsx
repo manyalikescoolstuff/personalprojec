@@ -319,6 +319,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
+    if (selectedTaskDetail?.id === taskId) {
+      setSelectedTaskDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              isCompleted: !prev.isCompleted,
+              completedAt: !prev.isCompleted
+                ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : undefined,
+            }
+          : null
+      );
+    }
+
     if (authUser && targetUpdate) {
       updateTaskDoc(authUser.id, taskId, targetUpdate).catch(console.warn);
     }

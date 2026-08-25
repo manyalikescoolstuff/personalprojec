@@ -190,13 +190,14 @@ export const TaskDetailModal: React.FC = () => {
         )}
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-[#1E2824] dark:border-[#1E2824] light:border-[#E2E8F0]">
+        <div className="flex items-center justify-between pt-4 border-t border-[var(--border-subtle)]">
           <button
             type="button"
             onClick={() => {
               deleteTask(selectedTaskDetail.id);
+              setSelectedTaskDetail(null);
             }}
-            className="inline-flex items-center gap-1.5 text-xs text-[#E07A7A] hover:text-[#F87171] transition-colors p-1.5 rounded hover:bg-[#E07A7A]/10 dark:text-[#E07A7A] light:text-[#DC2626]"
+            className="inline-flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors p-2 rounded-xl hover:bg-red-500/10 ghibli-btn"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Delete</span>
@@ -208,6 +209,7 @@ export const TaskDetailModal: React.FC = () => {
               size="sm"
               onClick={handleStartFocus}
               icon={<Play className="w-3.5 h-3.5" />}
+              className="ghibli-btn"
             >
               Start Focus Session
             </Button>
@@ -215,9 +217,13 @@ export const TaskDetailModal: React.FC = () => {
             <Button
               variant={selectedTaskDetail.isCompleted ? 'secondary' : 'primary'}
               size="sm"
-              onClick={() => toggleTaskComplete(selectedTaskDetail.id)}
+              onClick={() => {
+                toggleTaskComplete(selectedTaskDetail.id);
+              }}
+              icon={<Check className="w-3.5 h-3.5" />}
+              className="ghibli-btn"
             >
-              {selectedTaskDetail.isCompleted ? 'Mark Incomplete' : 'Complete Task'}
+              {selectedTaskDetail.isCompleted ? 'Mark Active' : 'Complete Task'}
             </Button>
           </div>
         </div>
