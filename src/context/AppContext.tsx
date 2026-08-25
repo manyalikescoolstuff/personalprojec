@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { User } from 'firebase/auth';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { User } from '@supabase/supabase-js';
 import {
   AppScreen,
   AppTheme,
@@ -21,8 +21,8 @@ import {
   INITIAL_BRAIN_DUMPS,
 } from '@/services/mockData';
 import { aiAssistantService } from '@/services/aiAssistantService';
-import { subscribeToAuthState } from '@/lib/firebase/auth';
-import { isFirebaseConfigured } from '@/lib/firebase/config';
+import { subscribeToAuthState } from '@/lib/supabase/auth';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
 import {
   subscribeToTasks,
   createTaskDoc,
@@ -41,7 +41,7 @@ import {
   batchSetBrainDumps,
   subscribeToProfile,
   saveUserProfileDoc,
-} from '@/lib/firebase/firestore';
+} from '@/lib/supabase/database';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'local';
 
@@ -54,11 +54,12 @@ interface AppContextType {
   profile: UserProfile;
   updateProfile: (updates: Partial<UserProfile>) => void;
 
-  // Firebase Auth & Cloud Sync
+  // Supabase Auth & Cloud Sync
   authUser: User | null;
   isAuthModalOpen: boolean;
   setAuthModalOpen: (open: boolean) => void;
-  isFirebaseActive: boolean;
+  isSupabaseActive: boolean;
+  isFirebaseActive: boolean; // Alias for backward compatibility
   syncStatus: SyncStatus;
 
   // Tasks
@@ -122,11 +123,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
   const [brainDumps, setBrainDumps] = useState<BrainDumpItem[]>(INITIAL_BRAIN_DUMPS);
 
-  // Firebase Auth & Cloud Sync States
+  // Supabase Auth & Cloud Sync States
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [isAuthModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('local');
-  const isFirebaseActive = Boolean(isFirebaseConfigured() && authUser);
+  const isSupabaseActive = Boolean(isSupabaseConfigured() && authUser);
 
   // Modals
   const [selectedTaskDetail, setSelectedTaskDetail] = useState<Task | null>(null);
@@ -152,27 +153,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [theme]);
 
-  // Subscribe to Firebase Auth
+  // Subscribe to Supabase Auth
   useEffect(() => {
     const unsubscribe = subscribeToAuthState((user) => {
       setAuthUser(user);
       if (user) {
         setSyncStatus('syncing');
       } else {
-        setSyncStatus(isFirebaseConfigured() ? 'offline' : 'local');
+        setSyncStatus(isSupabaseConfigured() ? 'offline' : 'local');
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Real-time Firestore Subscriptions
+  // Real-time Supabase Database Subscriptions
   useEffect(() => {
-    if (!authUser || !isFirebaseConfigured()) {
+    if (!authUser || !isSupabaseConfigured()) {
       return;
     }
 
-    const userId = authUser.uid;
+    const userId = authUser.id;
     setSyncStatus('syncing');
 
     // Subscribe to Tasks
@@ -182,7 +183,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (remoteTasks.length > 0) {
           setTasks(remoteTasks);
         } else if (!isInitializedRef.current && INITIAL_TASKS.length > 0) {
-          // Seed new Firestore user with initial task structure
           batchSetTasks(userId, INITIAL_TASKS).catch(console.error);
         }
         setSyncStatus('synced');
@@ -199,8 +199,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         } else if (!isInitializedRef.current && INITIAL_WEEK_SCHEDULE.length > 0) {
           batchSetSchedule(userId, INITIAL_WEEK_SCHEDULE).catch(console.error);
         }
-      },
-      () => setSyncStatus('offline')
+      }
     );
 
     // Subscribe to Brain Dumps
@@ -212,8 +211,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         } else if (!isInitializedRef.current && INITIAL_BRAIN_DUMPS.length > 0) {
           batchSetBrainDumps(userId, INITIAL_BRAIN_DUMPS).catch(console.error);
         }
-      },
-      () => setSyncStatus('offline')
+      }
     );
 
     // Subscribe to Profile
@@ -223,8 +221,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (remoteProfile && remoteProfile.name) {
           setProfile((prev) => ({ ...prev, ...remoteProfile }));
         }
-      },
-      () => setSyncStatus('offline')
+      }
     );
 
     isInitializedRef.current = true;
@@ -248,7 +245,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateProfile = (updates: Partial<UserProfile>) => {
     setProfile((prev) => ({ ...prev, ...updates }));
     if (authUser) {
-      saveUserProfileDoc(authUser.uid, updates).catch(console.warn);
+      saveUserProfileDoc(authUser.id, { ...profile, ...updates }).catch(console.warn);
     }
   };
 
@@ -275,7 +272,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTasks((prev) => [newTask, ...prev]);
 
     if (authUser) {
-      createTaskDoc(authUser.uid, newTask).catch(console.warn);
+      createTaskDoc(authUser.id, newTask).catch(console.warn);
     }
   };
 
@@ -287,7 +284,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSelectedTaskDetail((prev) => (prev ? { ...prev, ...updates } : null));
     }
     if (authUser) {
-      updateTaskDoc(authUser.uid, taskId, updates).catch(console.warn);
+      updateTaskDoc(authUser.id, taskId, updates).catch(console.warn);
     }
   };
 
@@ -297,7 +294,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSelectedTaskDetail(null);
     }
     if (authUser) {
-      deleteTaskDoc(authUser.uid, taskId).catch(console.warn);
+      deleteTaskDoc(authUser.id, taskId).catch(console.warn);
     }
   };
 
@@ -323,7 +320,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
 
     if (authUser && targetUpdate) {
-      updateTaskDoc(authUser.uid, taskId, targetUpdate).catch(console.warn);
+      updateTaskDoc(authUser.id, taskId, targetUpdate).catch(console.warn);
     }
   };
 
@@ -360,7 +357,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     if (authUser) {
-      updateTaskDoc(authUser.uid, taskId, {
+      updateTaskDoc(authUser.id, taskId, {
         subtasks: updatedSubtasks,
       }).catch(console.warn);
     }
@@ -392,7 +389,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addScheduleBlock = (block: ScheduleBlock) => {
     setSchedule((prev) => [...prev, block]);
     if (authUser) {
-      saveScheduleBlockDoc(authUser.uid, block).catch(console.warn);
+      saveScheduleBlockDoc(authUser.id, block).catch(console.warn);
     }
   };
 
@@ -401,14 +398,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map((b) => (b.id === id ? { ...b, ...updates } : b))
     );
     if (authUser) {
-      updateScheduleBlockDoc(authUser.uid, id, updates).catch(console.warn);
+      updateScheduleBlockDoc(authUser.id, id, updates).catch(console.warn);
     }
   };
 
   const deleteScheduleBlock = (id: string) => {
     setSchedule((prev) => prev.filter((b) => b.id !== id));
     if (authUser) {
-      deleteScheduleBlockDoc(authUser.uid, id).catch(console.warn);
+      deleteScheduleBlockDoc(authUser.id, id).catch(console.warn);
     }
   };
 
@@ -446,7 +443,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    // Direct natural language task capture e.g. "Add task: Review Physics"
     if (cleanCmd.startsWith('add ') || cleanCmd.startsWith('new ')) {
       const title = command.replace(/^(add|new)\s+(task\s*:?|todo\s*:?)?/i, '').trim();
       if (title) {
@@ -462,7 +458,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    // Default intelligent assistant response
     setAiRecommendation({
       id: `rec-cmd-${Date.now()}`,
       type: 'right_now',
@@ -490,7 +485,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
         setSchedule(updatedSchedule);
         if (authUser) {
-          batchSetSchedule(authUser.uid, updatedSchedule).catch(console.warn);
+          batchSetSchedule(authUser.id, updatedSchedule).catch(console.warn);
         }
       }
       setAiRecommendation((prev) => (prev ? { ...prev, isApplied: true } : null));
@@ -520,7 +515,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setTasks(updatedTasks);
     if (authUser) {
-      batchSetTasks(authUser.uid, updatedTasks).catch(console.warn);
+      batchSetTasks(authUser.id, updatedTasks).catch(console.warn);
     }
 
     setExhaustionModalOpen(false);
@@ -548,7 +543,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setBrainDumps((prev) => [newDump, ...prev]);
     if (authUser) {
-      saveBrainDumpDoc(authUser.uid, newDump).catch(console.warn);
+      saveBrainDumpDoc(authUser.id, newDump).catch(console.warn);
     }
   };
 
@@ -561,7 +556,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return [dump, ...prev];
     });
     if (authUser) {
-      saveBrainDumpDoc(authUser.uid, dump).catch(console.warn);
+      saveBrainDumpDoc(authUser.id, dump).catch(console.warn);
     }
   };
 
@@ -570,7 +565,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map((d) => (d.id === dumpId ? { ...d, ...updates } : d))
     );
     if (authUser) {
-      updateBrainDumpDoc(authUser.uid, dumpId, updates).catch(console.warn);
+      updateBrainDumpDoc(authUser.id, dumpId, updates).catch(console.warn);
     }
   };
 
@@ -604,7 +599,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
 
-    // Update brain dump record to record accepted status
     const updatedDumps = brainDumps.map((d) => {
       if (d.id === dumpId) {
         const acceptedItemIds = Array.from(new Set([...(d.acceptedItemIds || []), item.id]));
@@ -626,7 +620,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (authUser) {
       const dumpToSave = updatedDumps.find((d) => d.id === dumpId);
       if (dumpToSave) {
-        updateBrainDumpDoc(authUser.uid, dumpId, dumpToSave).catch(console.warn);
+        updateBrainDumpDoc(authUser.id, dumpId, dumpToSave).catch(console.warn);
       }
     }
   };
@@ -654,7 +648,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
         newScheduleBlocks.push(block);
         if (authUser) {
-          saveScheduleBlockDoc(authUser.uid, block).catch(console.warn);
+          saveScheduleBlockDoc(authUser.id, block).catch(console.warn);
         }
       } else {
         const task: Task = {
@@ -675,7 +669,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
         newTasks.push(task);
         if (authUser) {
-          createTaskDoc(authUser.uid, task).catch(console.warn);
+          createTaskDoc(authUser.id, task).catch(console.warn);
         }
       }
     });
@@ -688,7 +682,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSchedule((prev) => [...prev, ...newScheduleBlocks]);
     }
 
-    // Update brain dump record
     const updatedDumps = brainDumps.map((d) => {
       if (d.id === dumpId) {
         const acceptedItemIds = Array.from(new Set([...(d.acceptedItemIds || []), ...acceptedIds]));
@@ -710,7 +703,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (authUser) {
       const dumpToSave = updatedDumps.find((d) => d.id === dumpId);
       if (dumpToSave) {
-        updateBrainDumpDoc(authUser.uid, dumpId, dumpToSave).catch(console.warn);
+        updateBrainDumpDoc(authUser.id, dumpId, dumpToSave).catch(console.warn);
       }
     }
   };
@@ -756,7 +749,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
         newScheduleBlocks.push(block);
         if (authUser) {
-          saveScheduleBlockDoc(authUser.uid, block).catch(console.warn);
+          saveScheduleBlockDoc(authUser.id, block).catch(console.warn);
         }
       } else {
         const task: Task = {
@@ -776,7 +769,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
         newTasks.push(task);
         if (authUser) {
-          createTaskDoc(authUser.uid, task).catch(console.warn);
+          createTaskDoc(authUser.id, task).catch(console.warn);
         }
       }
     });
@@ -789,7 +782,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSchedule((prev) => [...prev, ...newScheduleBlocks]);
     }
 
-    // Save structured dump entry
     const newDump: BrainDumpItem = {
       id: `dump-${Date.now()}`,
       rawText: selected.map((s) => s.title).join(', '),
@@ -801,7 +793,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setBrainDumps((prev) => [newDump, ...prev]);
     if (authUser) {
-      saveBrainDumpDoc(authUser.uid, newDump).catch(console.warn);
+      saveBrainDumpDoc(authUser.id, newDump).catch(console.warn);
     }
 
     setAiRecommendation({
@@ -816,7 +808,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteBrainDump = (dumpId: string) => {
     setBrainDumps((prev) => prev.filter((d) => d.id !== dumpId));
     if (authUser) {
-      deleteBrainDumpDoc(authUser.uid, dumpId).catch(console.warn);
+      deleteBrainDumpDoc(authUser.id, dumpId).catch(console.warn);
     }
   };
 
@@ -844,7 +836,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         authUser,
         isAuthModalOpen,
         setAuthModalOpen,
-        isFirebaseActive,
+        isSupabaseActive,
+        isFirebaseActive: isSupabaseActive,
         syncStatus,
         tasks,
         addTask,

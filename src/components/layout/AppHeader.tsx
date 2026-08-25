@@ -70,7 +70,7 @@ export const AppHeader: React.FC = () => {
         <button
           onClick={() => setAuthModalOpen(true)}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs border border-[var(--border-subtle)] bg-[var(--bg-surface-subtle)] hover:border-[var(--accent-primary)] transition-all ghibli-btn"
-          title={authUser ? `Synced as ${authUser.email}` : 'Sign in to sync with Cloud Firestore'}
+          title={authUser ? `Synced as ${authUser.email || authUser.id}` : 'Sign in to sync with Supabase Cloud'}
         >
           {authUser ? (
             <>

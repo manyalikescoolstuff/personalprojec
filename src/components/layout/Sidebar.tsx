@@ -131,16 +131,16 @@ export const Sidebar: React.FC = () => {
         <button
           onClick={() => setAuthModalOpen(true)}
           className="flex items-center gap-2.5 min-w-0 text-left hover:opacity-80 transition-opacity flex-1"
-          title={authUser ? `Signed in as ${authUser.email || 'Guest'}` : 'Click to sign in to Firebase'}
+          title={authUser ? `Signed in as ${authUser.email || 'Guest'}` : 'Click to sign in to Supabase'}
         >
           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 border border-white/20 flex items-center justify-center text-xs font-bold text-white shadow-sm">
-            {authUser?.displayName
-              ? authUser.displayName.charAt(0).toUpperCase()
+            {authUser?.user_metadata?.full_name
+              ? authUser.user_metadata.full_name.charAt(0).toUpperCase()
               : profile.name.charAt(0).toUpperCase()}
           </div>
           <div className="truncate flex-1">
             <p className="text-xs font-bold text-[var(--text-primary)] truncate">
-              {authUser?.displayName || profile.name}
+              {authUser?.user_metadata?.full_name || authUser?.email || profile.name}
             </p>
             <p className="text-[10px] text-[var(--text-secondary)] flex items-center gap-1">
               <span

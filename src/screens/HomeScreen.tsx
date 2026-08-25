@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowRight,
   Clock,
@@ -56,15 +56,17 @@ export const HomeScreen: React.FC = () => {
     };
   }, []);
 
-  // Formatted Current Date & Day
-  const todayFormatted = React.useMemo(() => {
-    if (typeof window === 'undefined') return '';
-    return new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
+  const [todayFormatted, setTodayFormatted] = useState<string>('');
+
+  useEffect(() => {
+    setTodayFormatted(
+      new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    );
   }, []);
 
   // Strict Priority Sorting: Urgent (0) -> High (1) -> Medium (2) -> Low (3)
@@ -126,19 +128,19 @@ export const HomeScreen: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-[21px] sm:space-y-[34px] pb-24 font-kalam">
-      {/* 1. Large Hero Greeting + Date & Day (Scaled via Golden Ratio: 53px -> 68px) */}
-      <section className="space-y-[8px] pt-2">
+    <div className="max-w-3xl mx-auto space-y-8 pb-20 font-kalam">
+      {/* 1. Large Hero Greeting + Date & Day Directly Below */}
+      <section className="space-y-2 pt-2">
         <h1
           suppressHydrationWarning
-          className="text-golden-3xl sm:text-golden-4xl font-bold tracking-tight text-[var(--text-primary)] font-hangyaboly leading-none"
+          className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-[var(--text-primary)] font-hangyaboly leading-none"
         >
           {timeOfDay.greeting}, {profile.name}!
         </h1>
 
-        {/* Date and Day positioned directly under the greeting (Golden Scale: 16px -> 20px) */}
-        <div className="flex flex-wrap items-center gap-2 text-golden-base sm:text-golden-md text-[var(--text-secondary)] font-medium">
-          <span suppressHydrationWarning className="flex items-center gap-1.5 font-bold">
+        {/* Date and Day positioned directly under the greeting */}
+        <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base text-[var(--text-secondary)] font-medium">
+          <span suppressHydrationWarning className="flex items-center gap-1.5">
             <span>🗓️</span>
             <span>{todayFormatted}</span>
           </span>
@@ -149,33 +151,33 @@ export const HomeScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. Forest Bloom Progress Gauge (Fibonacci 21px & 34px padding) */}
-      <section className="p-[21px] rounded-[21px] bg-[var(--bg-card)] border border-[var(--border-subtle)] backdrop-blur-2xl shadow-sm">
-        <div className="flex items-center justify-between text-golden-sm sm:text-golden-base font-bold text-[var(--text-secondary)] mb-2">
+      {/* 2. Forest Bloom Progress Gauge */}
+      <section className="p-4 sm:p-5 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] backdrop-blur-2xl shadow-sm">
+        <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[var(--text-secondary)] mb-2">
           <span className="flex items-center gap-2 text-[var(--text-primary)]">
             <Sprout className="w-4 h-4 text-[var(--accent-primary)]" />
             <span>Forest Sanctuary Bloom: {completedCount} of {sortedTasks.length} tasks harvested</span>
           </span>
-          <span className="text-[var(--accent-primary)] font-bold text-golden-base sm:text-golden-md">{progressPercent}%</span>
+          <span className="text-[var(--accent-primary)] font-bold">{progressPercent}%</span>
         </div>
-        <div className="h-3.5 w-full bg-[var(--bg-surface-subtle)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
+        <div className="h-3 w-full bg-[var(--bg-surface-subtle)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
           <div
-            className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-lime-400 rounded-full transition-all duration-500 shadow-[0_0_13px_#86efac]"
+            className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-lime-400 rounded-full transition-all duration-500 shadow-[0_0_12px_#86efac]"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
       </section>
 
-      {/* 3. Immediate Workload Dump Box (Golden Scale: Title 33px -> 42px) */}
-      <section className="p-[21px] sm:p-[34px] rounded-[34px] bg-[var(--bg-card)] border-2 border-[var(--border-highlight)]/70 backdrop-blur-2xl shadow-xl space-y-[13px]">
+      {/* 3. Immediate Workload Dump Box (Where the user unloads their mental burden first) */}
+      <section className="p-5 sm:p-6 rounded-3xl bg-[var(--bg-card)] border-2 border-[var(--border-highlight)]/70 backdrop-blur-2xl shadow-xl space-y-3.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🚌</span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">🚌</span>
             <div>
-              <h2 className="text-golden-xl sm:text-golden-2xl font-bold text-[var(--text-primary)] leading-tight">
+              <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] leading-tight">
                 Dump Your Workload First
               </h2>
-              <p className="text-golden-sm sm:text-golden-base text-[var(--text-secondary)]">
+              <p className="text-xs text-[var(--text-secondary)]">
                 Messy is totally fine. Soot sprites will organize your thoughts into prioritized acorns!
               </p>
             </div>
@@ -183,31 +185,31 @@ export const HomeScreen: React.FC = () => {
 
           <button
             onClick={() => setActiveScreen('braindump')}
-            className="hidden sm:flex items-center gap-1.5 text-golden-sm text-[var(--accent-primary)] font-bold hover:underline ghibli-btn"
+            className="hidden sm:flex items-center gap-1 text-xs text-[var(--accent-primary)] font-bold hover:underline ghibli-btn"
           >
             <span>Full Catbus Express</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Quick Dump Input Form */}
-        <form onSubmit={handleQuickDumpSubmit} className="space-y-[13px]">
+        <form onSubmit={handleQuickDumpSubmit} className="space-y-3">
           <div className="relative">
             <textarea
               value={quickDumpText}
               onChange={(e) => setQuickDumpText(e.target.value)}
               placeholder="Dump assignments, exam deadlines, lecture notes, or rough tasks here..."
               rows={2}
-              className="w-full bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] focus:border-[var(--accent-primary)] rounded-[21px] p-[13px] sm:p-[21px] text-golden-sm sm:text-golden-base placeholder:text-[var(--text-muted)] focus:outline-none transition-all shadow-inner resize-none font-kalam"
+              className="w-full bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] focus:border-[var(--accent-primary)] rounded-2xl p-3.5 text-xs sm:text-sm placeholder:text-[var(--text-muted)] focus:outline-none transition-all shadow-inner resize-none font-kalam"
             />
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-golden-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs">
               <button
                 type="button"
                 onClick={() => setActiveScreen('braindump')}
-                className="px-[13px] py-[8px] rounded-[13px] bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 ghibli-btn font-bold"
+                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 ghibli-btn"
               >
                 <Mic className="w-3.5 h-3.5 text-red-400" />
                 <span>Voice</span>
@@ -216,7 +218,7 @@ export const HomeScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveScreen('braindump')}
-                className="px-[13px] py-[8px] rounded-[13px] bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 ghibli-btn font-bold"
+                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 ghibli-btn"
               >
                 <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
                 <span>Screenshot</span>
@@ -226,17 +228,17 @@ export const HomeScreen: React.FC = () => {
             <button
               type="submit"
               disabled={!quickDumpText.trim() || isDumping}
-              className="px-[21px] py-[10px] rounded-[13px] bg-gradient-to-r from-[#4E8752] to-[#6BA36F] dark:from-[#5A995F] dark:to-[#74B57A] text-white dark:text-[#0C1A12] font-bold text-golden-sm flex items-center gap-2 shadow-md disabled:opacity-40 disabled:cursor-not-allowed ghibli-btn"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#4E8752] to-[#6BA36F] dark:from-[#5A995F] dark:to-[#74B57A] text-white dark:text-[#0C1A12] font-bold text-xs flex items-center gap-1.5 shadow-md disabled:opacity-40 disabled:cursor-not-allowed ghibli-btn"
             >
               {isDumping ? (
                 <>
-                  <Sparkles className="w-4 h-4 animate-spin text-lime-300" />
+                  <Sparkles className="w-3.5 h-3.5 animate-spin text-lime-300" />
                   <span>Organizing...</span>
                 </>
               ) : (
                 <>
                   <span>Organize into Priorities</span>
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3.5 h-3.5" />
                 </>
               )}
             </button>
@@ -245,15 +247,15 @@ export const HomeScreen: React.FC = () => {
       </section>
 
       {/* 4. Sequenced Priorities: Strictly Ordered (Urgent 🌰 -> High 🍃 -> Medium 🌱 -> Low ⭐) */}
-      <section className="space-y-[13px]">
+      <section className="space-y-3.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🌰</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🌰</span>
             <div>
-              <h2 className="text-golden-xl sm:text-golden-2xl font-bold text-[var(--text-primary)]">
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
                 Sequenced Priorities
               </h2>
-              <p className="text-golden-sm sm:text-golden-base text-[var(--text-secondary)]">
+              <p className="text-xs text-[var(--text-secondary)]">
                 Ranked strictly: Urgent Acorns 🌰 &rarr; High 🍃 &rarr; Medium 🌱 &rarr; Low ⭐
               </p>
             </div>
@@ -261,19 +263,19 @@ export const HomeScreen: React.FC = () => {
 
           <button
             onClick={() => setQuickAddOpen(true)}
-            className="flex items-center gap-1.5 px-[13px] py-[8px] rounded-[13px] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--accent-primary)] text-golden-sm text-[var(--accent-primary)] font-bold ghibli-btn shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--accent-primary)] text-xs text-[var(--accent-primary)] font-bold ghibli-btn shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Priority</span>
           </button>
         </div>
 
-        <div className="space-y-[13px]">
+        <div className="space-y-2.5">
           {activeTasks.length === 0 ? (
-            <div className="p-[34px] text-center rounded-[34px] border border-[var(--border-subtle)] bg-[var(--bg-card)] backdrop-blur-xl space-y-[8px]">
-              <span className="text-4xl">🌱</span>
-              <p className="text-golden-lg font-bold text-[var(--text-primary)]">All priorities harvested!</p>
-              <p className="text-golden-sm sm:text-golden-base text-[var(--text-secondary)]">
+            <div className="p-8 text-center rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-card)] backdrop-blur-xl space-y-2">
+              <span className="text-3xl">🌱</span>
+              <p className="text-base font-bold text-[var(--text-primary)]">All priorities harvested!</p>
+              <p className="text-xs text-[var(--text-secondary)]">
                 Dump your next assignment or project above to sprout new tasks.
               </p>
             </div>
@@ -284,10 +286,10 @@ export const HomeScreen: React.FC = () => {
       </section>
 
       {/* 5. Forest Spirit Recommendations */}
-      <section className="space-y-[13px]">
-        <div className="flex items-center gap-2.5">
-          <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" />
-          <h2 className="text-golden-lg sm:text-golden-xl font-bold text-[var(--text-primary)]">
+      <section className="space-y-3.5">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
+          <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">
             Forest Spirit Suggestions
           </h2>
         </div>

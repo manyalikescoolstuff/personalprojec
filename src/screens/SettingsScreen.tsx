@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Card } from '@/components/ui/Card';
-import { isFirebaseConfigured } from '@/lib/firebase/config';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 type SettingsTab =
   | 'profile'
@@ -40,7 +40,7 @@ export const SettingsScreen: React.FC = () => {
   const [localEncryption, setLocalEncryption] = useState(true);
   const [memoryRetentionDays, setMemoryRetentionDays] = useState('30');
 
-  const isConfigured = isFirebaseConfigured();
+  const isConfigured = isSupabaseConfigured();
 
   const navItems: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
@@ -148,7 +148,7 @@ export const SettingsScreen: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-medium text-[#F3F4F1] dark:text-[#F3F4F1] light:text-[#111827]">
-                    Firebase Cloud Backend
+                    Supabase PostgreSQL Cloud Backend
                   </h3>
                   <p className="text-xs text-[#8C9E90] dark:text-[#8C9E90] light:text-[#64748B]">
                     Multi-device synchronization for tasks, schedules, attachments, and brain dumps.
@@ -174,7 +174,7 @@ export const SettingsScreen: React.FC = () => {
                   <h4 className="text-xs uppercase tracking-wider text-[#8C9E90]">Active Cloud User</h4>
                   <p className="text-sm font-medium text-[#F3F4F1]">
                     {authUser
-                      ? authUser.displayName || authUser.email || `Guest (${authUser.uid.slice(0, 8)}...)`
+                      ? authUser.user_metadata?.full_name || authUser.email || `Guest (${authUser.id.slice(0, 8)}...)`
                       : 'Not signed in (Local Storage Mode)'}
                   </p>
                 </div>
@@ -182,14 +182,14 @@ export const SettingsScreen: React.FC = () => {
                   onClick={() => setAuthModalOpen(true)}
                   className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors shadow-sm"
                 >
-                  {authUser ? 'Manage Account' : 'Connect Firebase'}
+                  {authUser ? 'Manage Account' : 'Connect Supabase'}
                 </button>
               </div>
 
               <div className="pt-2 border-t border-[#1E2824]/60 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                 <div>
                   <span className="text-[#63756A] block text-[11px]">Database:</span>
-                  <span className="text-[#8C9E90] font-medium">Cloud Firestore</span>
+                  <span className="text-[#8C9E90] font-medium">Supabase PostgreSQL</span>
                 </div>
                 <div>
                   <span className="text-[#63756A] block text-[11px]">Sync Status:</span>
@@ -198,7 +198,7 @@ export const SettingsScreen: React.FC = () => {
                 <div>
                   <span className="text-[#63756A] block text-[11px]">Project:</span>
                   <span className="text-[#8C9E90] font-medium truncate block">
-                    {process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'Configured in .env.local'}
+                    {process.env.NEXT_PUBLIC_SUPABASE_URL || 'Configured in .env.local'}
                   </span>
                 </div>
               </div>
@@ -206,15 +206,14 @@ export const SettingsScreen: React.FC = () => {
 
             {/* Step-by-step Setup Guide */}
             <div className="space-y-2 text-xs">
-              <h4 className="font-semibold text-xs text-[#F3F4F1]">Connecting your Firebase Project:</h4>
+              <h4 className="font-semibold text-xs text-[#F3F4F1]">Connecting your Supabase Project:</h4>
               <ol className="list-decimal list-inside space-y-1 text-[#8C9E90] pl-1">
-                <li>Create a project at <span className="text-emerald-400 font-mono">console.firebase.google.com</span></li>
-                <li>Add a Web App and enable <strong className="text-[#D8E2DC]">Firestore Database</strong> &amp; <strong className="text-[#D8E2DC]">Authentication</strong> (Google / Anonymous / Email).</li>
+                <li>Create a project at <span className="text-emerald-400 font-mono">supabase.com/dashboard</span></li>
+                <li>Go to the <strong className="text-[#D8E2DC]">SQL Editor</strong> and run the schema script located at <span className="text-emerald-400 font-mono">src/lib/supabase/schema.sql</span>.</li>
                 <li>Add your credentials into <span className="text-emerald-400 font-mono">.env.local</span>:
                   <code className="block mt-1 p-2 rounded bg-[#0A0F0D] border border-[#1E2824] text-[11px] text-[#9ED8A3]">
-                    NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSy...<br />
-                    NEXT_PUBLIC_FIREBASE_PROJECT_ID=my-project-id<br />
-                    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=my-project-id.firebaseapp.com
+                    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co<br />
+                    NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
                   </code>
                 </li>
               </ol>
