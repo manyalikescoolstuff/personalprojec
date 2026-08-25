@@ -34,31 +34,31 @@ export const HomeScreen: React.FC = () => {
   const [quickDumpText, setQuickDumpText] = useState('');
   const [isDumping, setIsDumping] = useState(false);
 
-  // Time of Day Greeting
-  const timeOfDay = React.useMemo(() => {
-    if (typeof window === 'undefined') return { greeting: 'Good morning', quote: 'The morning forest breeze is gentle today.' };
-    const hour = new Date().getHours();
-    if (hour < 12) {
-      return {
-        greeting: 'Good morning',
-        quote: 'The forest glade is waking up. Dump your thoughts or plant your focus seeds! 🌱',
-      };
-    }
-    if (hour < 17) {
-      return {
-        greeting: 'Good afternoon',
-        quote: 'Totoro is holding his leafy umbrella. Keep up your steady focus pace! 🍃',
-      };
-    }
-    return {
-      greeting: 'Peaceful evening',
-      quote: 'The stars are shining over the giant camphor tree. Harvest your remaining tasks. ✨',
-    };
-  }, []);
-
+  const [timeOfDay, setTimeOfDay] = useState({
+    greeting: 'Good day',
+    quote: 'Totoro is watching over your forest sanctuary. 🌱',
+  });
   const [todayFormatted, setTodayFormatted] = useState<string>('');
 
   useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setTimeOfDay({
+        greeting: 'Good morning',
+        quote: 'The forest glade is waking up. Dump your thoughts or plant your focus seeds! 🌱',
+      });
+    } else if (hour < 17) {
+      setTimeOfDay({
+        greeting: 'Good afternoon',
+        quote: 'Totoro is holding his leafy umbrella. Keep up your steady focus pace! 🍃',
+      });
+    } else {
+      setTimeOfDay({
+        greeting: 'Peaceful evening',
+        quote: 'The stars are shining over the giant camphor tree. Harvest your remaining tasks. ✨',
+      });
+    }
+
     setTodayFormatted(
       new Date().toLocaleDateString('en-US', {
         weekday: 'long',
