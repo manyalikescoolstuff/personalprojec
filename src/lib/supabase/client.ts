@@ -24,6 +24,7 @@ export const getSupabase = (): SupabaseClient | null => {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
+        detectSessionInUrl: true,
       },
     });
   }
@@ -31,11 +32,4 @@ export const getSupabase = (): SupabaseClient | null => {
   return supabaseInstance;
 };
 
-export const supabase = isSupabaseConfigured()
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-      },
-    })
-  : (null as unknown as SupabaseClient);
+export const supabase = getSupabase();

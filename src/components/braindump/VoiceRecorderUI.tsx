@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, Square, Check, Info, AlertCircle } from 'lucide-react';
+import { Mic, Square, Check, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface VoiceRecorderUIProps {
@@ -9,7 +9,6 @@ interface VoiceRecorderUIProps {
   onCancel?: () => void;
 }
 
-// Global declaration for Web Speech API
 interface SpeechRecognitionEvent {
   resultIndex: number;
   results: {
@@ -46,61 +45,44 @@ export const VoiceRecorderUI: React.FC<VoiceRecorderUIProps> = ({
   onCancel,
 }) => {
   const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribingWithAI, setIsTranscribingWithAI] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [transcript, setTranscript] = useState('');
-  const [isSupported] = useState<boolean | null>(() => {
-    if (typeof window === 'undefined') return null;
-    return !!(
-      (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition
-    );
-  });
+  const [audioLevels, setAudioLevels] = useState<number[]>([15, 25, 40, 20, 30, 50, 25, 35, 60, 30, 20, 15]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const isRecordingRef = useRef(false);
 
-  // Initialize SpeechRecognition instance
+  isRecordingRef.current = isRecording;
+
+  // Cleanup on unmount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognitionClass =
-        (window as unknown as { SpeechRecognition?: new () => BrowserSpeechRecognition }).SpeechRecognition ||
-        (window as unknown as { webkitSpeechRecognition?: new () => BrowserSpeechRecognition }).webkitSpeechRecognition;
-
-      if (SpeechRecognitionClass) {
-        try {
-          const instance = new SpeechRecognitionClass();
-          instance.continuous = true;
-          instance.interimResults = true;
-          instance.lang = 'en-US';
-
-          instance.onresult = (event: SpeechRecognitionEvent) => {
-            let fullText = '';
-            for (let i = 0; i < event.results.length; i++) {
-              fullText += event.results[i][0].transcript + ' ';
-            }
-            setTranscript(fullText.trim());
-          };
-
-          instance.onerror = (event: SpeechRecognitionErrorEvent) => {
-            if (event.error === 'no-speech') return;
-            setErrorMessage(`Microphone note: ${event.error}. You can still type or use sample dictations.`);
-            setIsRecording(false);
-          };
-
-          instance.onend = () => {
-            setIsRecording(false);
-          };
-
-          recognitionRef.current = instance;
-        } catch {
-          // Ignore
-        }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach((track) => track.stop());
       }
-    }
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {});
+      }
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+    };
   }, []);
 
-  // Timer while recording
+  // Timer counter
   useEffect(() => {
     if (isRecording) {
       timerRef.current = setInterval(() => {
@@ -115,37 +97,190 @@ export const VoiceRecorderUI: React.FC<VoiceRecorderUIProps> = ({
     };
   }, [isRecording]);
 
-  const startRecording = useCallback(() => {
-    setErrorMessage(null);
-    setSeconds(0);
-    setTranscript('');
-    setIsRecording(true);
+  // Audio level visualizer loop
+  const updateAudioLevels = useCallback(() => {
+    if (!analyserRef.current || !isRecordingRef.current) return;
 
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.start();
-      } catch {
-        // Fallback simulation if speech recognition is already running or blocked
-      }
-    } else {
-      // Graceful simulated speech recognition
-      setTranscript('Listening...');
-      setTimeout(() => {
-        setTranscript('I have DBMS tomorrow, gym at six and I need to buy shampoo.');
-      }, 2000);
+    const bufferLength = analyserRef.current.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    analyserRef.current.getByteFrequencyData(dataArray);
+
+    // Sample 12 frequency bands
+    const step = Math.floor(bufferLength / 12);
+    const newLevels = [];
+    for (let i = 0; i < 12; i++) {
+      const val = dataArray[i * step] || 0;
+      // Map 0-255 to percentage between 15% and 100%
+      const percent = Math.max(15, Math.min(100, Math.round((val / 255) * 100)));
+      newLevels.push(percent);
     }
+    setAudioLevels(newLevels);
+
+    animFrameRef.current = requestAnimationFrame(updateAudioLevels);
   }, []);
 
-  const stopRecording = useCallback(() => {
+  const startRecording = async () => {
+    setErrorMessage(null);
+    setSeconds(0);
+    audioChunksRef.current = [];
+
+    try {
+      // 1. Request actual microphone stream
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStreamRef.current = stream;
+
+      // 2. Setup AudioContext for Live Waveform Visualizer
+      try {
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioContextClass) {
+          const audioCtx = new AudioContextClass();
+          audioContextRef.current = audioCtx;
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 64;
+          analyserRef.current = analyser;
+          const source = audioCtx.createMediaStreamSource(stream);
+          source.connect(analyser);
+          animFrameRef.current = requestAnimationFrame(updateAudioLevels);
+        }
+      } catch (err) {
+        console.warn('AudioContext visualization not available:', err);
+      }
+
+      // 3. Setup MediaRecorder for AI Audio Transcription fallback
+      try {
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : MediaRecorder.isTypeSupported('audio/mp4')
+          ? 'audio/mp4'
+          : '';
+
+        const mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            audioChunksRef.current.push(e.data);
+          }
+        };
+
+        mediaRecorder.start(250);
+      } catch (e) {
+        console.warn('MediaRecorder fallback init:', e);
+      }
+
+      // 4. Setup SpeechRecognition (Web Speech API)
+      const SpeechRecognitionClass =
+        (window as unknown as { SpeechRecognition?: new () => BrowserSpeechRecognition }).SpeechRecognition ||
+        (window as unknown as { webkitSpeechRecognition?: new () => BrowserSpeechRecognition }).webkitSpeechRecognition;
+
+      if (SpeechRecognitionClass) {
+        try {
+          const recognition = new SpeechRecognitionClass();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+
+          let accumulatedTranscript = transcript ? transcript + ' ' : '';
+
+          recognition.onresult = (event: SpeechRecognitionEvent) => {
+            let sessionText = '';
+            for (let i = 0; i < event.results.length; i++) {
+              sessionText += event.results[i][0].transcript + ' ';
+            }
+            const combined = (accumulatedTranscript + sessionText).trim();
+            setTranscript(combined);
+          };
+
+          recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+            if (event.error === 'no-speech') return;
+            console.warn('Speech recognition status:', event.error);
+          };
+
+          recognition.onend = () => {
+            // If the user is still in recording mode, restart speech recognition smoothly
+            if (isRecordingRef.current && recognitionRef.current) {
+              try {
+                recognitionRef.current.start();
+              } catch {}
+            }
+          };
+
+          recognitionRef.current = recognition;
+          recognition.start();
+        } catch (e) {
+          console.warn('SpeechRecognition start error:', e);
+        }
+      }
+
+      setIsRecording(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Microphone permission denied';
+      setErrorMessage(`Microphone access needed: ${msg}. Please allow microphone permissions in your browser.`);
+      setIsRecording(false);
+    }
+  };
+
+  const stopRecording = async () => {
     setIsRecording(false);
+
+    // Stop visualizer
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+
+    // Stop speech recognition
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
-      } catch {
-        // Ignore
+      } catch {}
+    }
+
+    // Stop MediaStream tracks
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach((track) => track.stop());
+    }
+
+    // Stop MediaRecorder and transcribe if transcript is still empty
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+
+      // If speech recognition didn't capture text (e.g. unsupported browser or noise), send to Gemini AI Transcribe
+      if (!transcript.trim()) {
+        setIsTranscribingWithAI(true);
+        setTimeout(async () => {
+          try {
+            if (audioChunksRef.current.length > 0) {
+              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+              const reader = new FileReader();
+              reader.readAsDataURL(audioBlob);
+              reader.onloadend = async () => {
+                const base64Data = reader.result as string;
+                try {
+                  const res = await fetch('/api/voice/transcribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      audioData: base64Data,
+                      mimeType: audioBlob.type,
+                    }),
+                  });
+                  if (res.ok) {
+                    const json = await res.json();
+                    if (json.transcript) {
+                      setTranscript(json.transcript);
+                    }
+                  }
+                } catch {}
+                setIsTranscribingWithAI(false);
+              };
+            } else {
+              setIsTranscribingWithAI(false);
+            }
+          } catch {
+            setIsTranscribingWithAI(false);
+          }
+        }, 400);
       }
     }
-  }, []);
+  };
 
   const toggleRecording = () => {
     if (isRecording) {
@@ -156,10 +291,10 @@ export const VoiceRecorderUI: React.FC<VoiceRecorderUIProps> = ({
   };
 
   const handleApply = () => {
-    const finalClean = transcript.replace('Listening...', '').trim();
-    onTranscriptReady(
-      finalClean || 'I have DBMS tomorrow, gym at six and I need to buy shampoo.'
-    );
+    const finalClean = transcript.trim();
+    if (finalClean) {
+      onTranscriptReady(finalClean);
+    }
   };
 
   const formatSeconds = (sec: number) => {
@@ -169,102 +304,120 @@ export const VoiceRecorderUI: React.FC<VoiceRecorderUIProps> = ({
   };
 
   return (
-    <div className="w-full bg-[#111816] border border-[#1E2824] rounded-xl p-6 text-center space-y-5 font-kalam dark:bg-[#111816] dark:border-[#1E2824] light:bg-[#FFFFFF] light:border-[#E2E8F0]">
+    <div className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-6 text-center space-y-6 font-kalam shadow-md">
       <div className="space-y-1">
-        <h3 className="text-base sm:text-lg font-medium text-[#F3F4F1] dark:text-[#F3F4F1] light:text-[#111827]">
-          Voice Input
+        <div className="flex items-center justify-center gap-1.5 text-xs text-[var(--accent-primary)] font-bold uppercase tracking-wider">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Totoro Voice Ear & AI Speech</span>
+        </div>
+        <h3 className="text-xl font-bold text-[var(--text-primary)]">
+          Speak Your Thoughts Naturally
         </h3>
-        <p className="text-xs text-[#8C9E90] dark:text-[#8C9E90] light:text-[#64748B]">
-          Speak naturally. Your words will be transcribed and added directly to your Brain Dump.
+        <p className="text-xs text-[var(--text-secondary)]">
+          Totoro is listening. Speak assignments, reminders, gym slots, or random thoughts.
         </p>
       </div>
 
-      {/* Big Tactile Microphone Button */}
-      <div className="py-2 flex flex-col items-center justify-center">
+      {/* Tactile Totoro Microphone Button */}
+      <div className="py-3 flex flex-col items-center justify-center">
         <button
           type="button"
           onClick={toggleRecording}
-          className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 relative shadow-lg ${
+          disabled={isTranscribingWithAI}
+          className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 relative shadow-xl ghibli-btn ${
             isRecording
-              ? 'bg-[#E07A7A] text-[#0A0F0D] scale-110 shadow-[0_0_30px_rgba(224,122,122,0.3)]'
-              : 'bg-[#18221E] border-2 border-[#9ED8A3] text-[#9ED8A3] hover:bg-[#9ED8A3] hover:text-[#0A0F0D] hover:scale-105 dark:bg-[#18221E] dark:border-[#9ED8A3] dark:text-[#9ED8A3] light:bg-[#EFF6FF] light:border-[#2563EB] light:text-[#2563EB] light:hover:bg-[#2563EB] light:hover:text-white'
+              ? 'bg-red-500 text-white scale-110 shadow-[0_0_35px_rgba(239,68,68,0.5)]'
+              : 'bg-emerald-600 hover:bg-emerald-500 text-white hover:scale-105 shadow-[0_0_25px_rgba(16,185,129,0.3)]'
           }`}
           aria-label={isRecording ? 'Stop recording' : 'Start recording'}
         >
-          {isRecording ? (
-            <Square className="w-7 h-7 fill-current" />
+          {isTranscribingWithAI ? (
+            <Loader2 className="w-9 h-9 animate-spin text-white" />
+          ) : isRecording ? (
+            <Square className="w-8 h-8 fill-current" />
           ) : (
-            <Mic className="w-8 h-8" />
+            <Mic className="w-9 h-9" />
           )}
 
-          {/* Pulse ring when recording */}
+          {/* Glowing pulse rings when recording */}
           {isRecording && (
-            <div className="absolute inset-0 rounded-full border-2 border-[#E07A7A] animate-ping opacity-40 pointer-events-none" />
+            <>
+              <div className="absolute inset-0 rounded-full border-2 border-red-400 animate-ping opacity-50 pointer-events-none" />
+              <div className="absolute -inset-2 rounded-full border border-red-500/40 animate-pulse pointer-events-none" />
+            </>
           )}
         </button>
 
-        <span className="text-xs text-[#8C9E90] mt-3 font-sans dark:text-[#8C9E90] light:text-[#64748B]">
-          {isRecording
-            ? `Recording (${formatSeconds(seconds)}) · Click to stop`
-            : 'Click microphone to start speaking'}
+        <span className="text-xs font-bold text-[var(--text-secondary)] mt-4">
+          {isTranscribingWithAI
+            ? 'Totoro is transcribing with Gemini AI...'
+            : isRecording
+            ? `Recording Voice (${formatSeconds(seconds)}) · Tap to Stop`
+            : 'Tap the Green Acorn Mic to start speaking'}
         </span>
       </div>
 
-      {/* Live Audio Waveform Animation */}
-      {isRecording && (
-        <div className="flex items-center justify-center gap-1.5 h-8">
-          {[40, 70, 95, 60, 100, 50, 85, 95, 60, 85, 45, 75, 90, 60].map((height, i) => (
-            <div
-              key={i}
-              className="w-1 bg-[#9ED8A3] dark:bg-[#9ED8A3] light:bg-[#2563EB] rounded-full transition-all duration-150 animate-pulse"
-              style={{
-                height: `${height}%`,
-                animationDelay: `${(i % 5) * 0.1}s`,
-              }}
-            />
-          ))}
-        </div>
-      )}
+      {/* Dynamic Live Audio Waveform Animation (Reactive to your voice amplitude) */}
+      <div className="flex items-center justify-center gap-1.5 h-10 px-4">
+        {audioLevels.map((height, i) => (
+          <div
+            key={i}
+            className={`w-1.5 rounded-full transition-all duration-100 ${
+              isRecording
+                ? 'bg-gradient-to-t from-emerald-500 to-lime-400 shadow-[0_0_8px_#a3e635]'
+                : 'bg-[var(--border-subtle)]'
+            }`}
+            style={{
+              height: isRecording ? `${height}%` : '20%',
+            }}
+          />
+        ))}
+      </div>
 
-      {/* Transcript Input / Preview Area */}
+      {/* Live Transcript Box */}
       <div className="space-y-2 text-left">
-        <label className="text-xs text-[#8C9E90] uppercase tracking-wider flex items-center justify-between">
-          <span>Transcript (Editable)</span>
-          {isRecording && (
-            <span className="text-[#9ED8A3] flex items-center gap-1 text-[11px] animate-pulse">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#9ED8A3]" />
-              Transcribing
-            </span>
+        <div className="flex items-center justify-between">
+          <label className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <span>Voice Transcript (Editable)</span>
+            {isRecording && (
+              <span className="text-lime-400 flex items-center gap-1 text-[11px] animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-lime-400" />
+                Live Listening
+              </span>
+            )}
+          </label>
+          {transcript && (
+            <button
+              type="button"
+              onClick={() => setTranscript('')}
+              className="text-[11px] text-[var(--text-muted)] hover:text-red-400 transition-colors"
+            >
+              Clear
+            </button>
           )}
-        </label>
+        </div>
         <textarea
           value={transcript}
           onChange={(e) => setTranscript(e.target.value)}
-          placeholder={isRecording ? 'Listening...' : 'Your spoken transcript will appear here. You can also edit it directly.'}
+          placeholder={
+            isRecording
+              ? 'Listening to your voice...'
+              : 'Your spoken transcript will appear here live. You can also edit, tweak, or add more details directly.'
+          }
           rows={3}
-          className="w-full bg-[#151D1A] text-[#F3F4F1] border border-[#1E2824] rounded-lg p-3 text-sm font-kalam placeholder:text-[#55665A] focus:outline-none focus:border-[#9ED8A3] resize-none transition-colors dark:bg-[#151D1A] dark:text-[#F3F4F1] dark:border-[#1E2824] light:bg-[#F8FAFC] light:border-[#E2E8F0] light:text-[#111827]"
+          className="w-full bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-xl p-3.5 text-sm placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] resize-none transition-all shadow-inner"
         />
       </div>
 
-      {/* Informative fallback message if speech recognition is unsupported */}
-      {isSupported === false && (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#18221E] border border-[#283630] text-xs text-[#8C9E90] text-left dark:bg-[#18221E] dark:border-[#283630] light:bg-[#F1F5F9] light:border-[#E2E8F0] light:text-[#64748B]">
-          <Info className="w-4 h-4 text-[#9ED8A3] shrink-0 dark:text-[#9ED8A3] light:text-[#2563EB]" />
-          <span>
-            Native browser speech recognition is not active on this browser. Voice recording simulation is enabled, and you can edit any words above.
-          </span>
-        </div>
-      )}
-
       {errorMessage && (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#E07A7A]/10 border border-[#E07A7A]/30 text-xs text-[#E07A7A] text-left">
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-xs text-red-400 text-left">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex items-center justify-center gap-2 pt-2 border-t border-[#1E2824] dark:border-[#1E2824] light:border-[#E2E8F0]">
+      {/* Action Buttons */}
+      <div className="flex items-center justify-center gap-3 pt-2 border-t border-[var(--border-subtle)]">
         {onCancel && (
           <Button variant="subtle" size="sm" onClick={onCancel}>
             Cancel
@@ -275,10 +428,11 @@ export const VoiceRecorderUI: React.FC<VoiceRecorderUIProps> = ({
           variant="primary"
           size="md"
           onClick={handleApply}
-          disabled={!transcript.trim() || isRecording}
+          disabled={!transcript.trim() || isRecording || isTranscribingWithAI}
           icon={<Check className="w-4 h-4" />}
+          className="ghibli-btn"
         >
-          Add to Brain Dump
+          Organize with AI Brain
         </Button>
       </div>
     </div>

@@ -458,13 +458,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    setAiRecommendation({
-      id: `rec-cmd-${Date.now()}`,
-      type: 'right_now',
-      title: 'Command Acknowledged',
-      message: `Analyzing: "${command}". All scheduled priority windows are synchronized.`,
-      actionLabel: 'View Schedule',
-    });
+    // Call Totoro's Live Gemini AI Brain
+    fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: command,
+        tasks,
+        schedule,
+        tone: profile.assistantTone,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.reply) {
+          setAiRecommendation({
+            id: `rec-cmd-${Date.now()}`,
+            type: 'right_now',
+            title: 'Totoro Forest AI',
+            message: data.reply,
+            actionLabel: 'Focus Sanctuary',
+          });
+        }
+      })
+      .catch(() => {
+        setAiRecommendation({
+          id: `rec-cmd-${Date.now()}`,
+          type: 'right_now',
+          title: 'Command Acknowledged',
+          message: `Analyzing: "${command}". All scheduled priority windows are synchronized.`,
+          actionLabel: 'View Schedule',
+        });
+      });
   };
 
   const acceptRecommendation = (recId: string) => {

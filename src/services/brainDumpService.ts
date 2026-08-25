@@ -244,7 +244,65 @@ export const brainDumpService = {
       }
     }
 
-    // 2. Fallback or pure text/voice input: Process with local multi-modal processor
+    // 2. Call real Gemini AI Organize Route for intelligent extraction
+    if (combinedContextText) {
+      try {
+        const response = await fetch('/api/ai/organize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: combinedContextText,
+            userTone: 'Calm & Direct',
+          }),
+        });
+
+        if (response.ok) {
+          const aiData = await response.json();
+          if (aiData.items && aiData.items.length > 0) {
+            const items: ExtractedBrainItem[] = aiData.items.map((item: any, idx: number) => ({
+              id: `ext-ai-${Date.now()}-${idx}`,
+              title: item.title || 'Untitled Item',
+              type: item.type || 'task',
+              category: item.category || 'Personal',
+              priority: item.priority || 'medium',
+              deadline: item.deadline || undefined,
+              timeSlot: item.timeSlot || undefined,
+              day: item.day || undefined,
+              notes: item.notes || '',
+              sourceType: hasAttachments ? 'mixed' : voiceTranscript ? 'voice' : 'text',
+              sourceLabel: voiceTranscript ? 'Spoken thought' : 'Written thought',
+              selected: true,
+            }));
+
+            const result: BrainDumpAnalysisResult = {
+              summary: aiData.summary || `Totoro organized ${items.length} items with Gemini AI.`,
+              items,
+              counts: {
+                tasks: items.filter((i) => i.type === 'task').length,
+                deadlines: items.filter((i) => i.type === 'deadline').length,
+                reminders: items.filter((i) => i.type === 'reminder').length,
+                events: items.filter((i) => i.type === 'event' || i.type === 'routine').length,
+              },
+              visionConfigured: true,
+              visionProviderUsed: 'Google Gemini 2.0 Flash (AI Brain)',
+            };
+
+            const updatedDump: BrainDump = {
+              ...dump,
+              status: 'review',
+              extractedItems: result.items,
+              extractedSummary: result.summary,
+            };
+
+            return { dump: updatedDump, result };
+          }
+        }
+      } catch (err) {
+        console.warn('AI organize route error, falling back to local processor:', err);
+      }
+    }
+
+    // 3. Fallback or offline processing with local multi-modal processor
     const result = mockProcessor.process(text, voiceTranscript, attachments);
 
     const updatedDump: BrainDump = {
