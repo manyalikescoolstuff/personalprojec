@@ -178,7 +178,7 @@ export const VoiceRecorderUI: React.FC<VoiceRecorderUIProps> = ({
           const recognition = new SpeechRecognitionClass();
           recognition.continuous = true;
           recognition.interimResults = true;
-          recognition.lang = 'en-US';
+          recognition.lang = 'en-IN';
 
           let accumulatedTranscript = transcript ? transcript + ' ' : '';
 
@@ -314,7 +314,7 @@ export const VoiceRecorderUI: React.FC<VoiceRecorderUIProps> = ({
           Speak Your Thoughts Naturally
         </h3>
         <p className="text-xs text-[var(--text-secondary)]">
-          Totoro is listening. Speak assignments, reminders, gym slots, or random thoughts.
+          Totoro fluently understands <strong className="text-[var(--accent-primary)]">English &amp; Hinglish</strong> (e.g., <em>&ldquo;Kal assignment submit karna hai, shaam ko gym jana hai&rdquo;</em>). Speak naturally!
         </p>
       </div>
 

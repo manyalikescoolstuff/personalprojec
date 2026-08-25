@@ -26,6 +26,11 @@ Your personality:
 - You give crystal-clear, focused advice without fluff or overwhelm.
 - You reference Studio Ghibli nature metaphors lightly (sprouts, leaves, acorns, forest breeze).
 
+MULTILINGUAL & HINGLISH UNDERSTANDING:
+- The user may ask questions or speak in **Hinglish** (e.g. "Bhai bohot stress ho raha hai kya karoon pehle?", "DBMS assignment kaise khatam karein?", "Mera kal ka plan set kardo").
+- Fully understand the emotion, deadlines, and requirements in Hinglish/Hindi, and reply in **clear, reassuring, practical English** (or empathetic Hinglish-friendly phrasing if helpful).
+- If breaking down tasks, provide bullet points with estimated times.
+
 CURRENT USER WORKSPACE CONTEXT:
 Active Tasks: ${JSON.stringify((tasks || []).slice(0, 10).map((t: { title: string; priority: string; deadline?: string; isCompleted: boolean }) => ({
   title: t.title,
@@ -39,7 +44,7 @@ Today's Schedule: ${JSON.stringify((schedule || []).slice(0, 8))}
 USER REQUEST:
 "${prompt}"
 
-Please respond with practical, supportive advice. If recommending an action or task breakdown, format it cleanly with bullet points.
+Please respond with practical, supportive advice in English.
 `;
 
     const response = await fetch(url, {

@@ -9,20 +9,45 @@ Your task is to analyze the user's raw thoughts, voice dictation, or workload no
 - Reminders (quick calls, check-ins, chores)
 - Schedule events (activities with specific days or time slots)
 
+=============================================================================
+CRITICAL MULTILINGUAL & HINGLISH UNDERSTANDING RULES:
+=============================================================================
+1. The user will often type or speak in **Hinglish** (Hindi mixed with English written in Latin/English alphabet), Hindi, or colloquial Indian English.
+   Examples of Hinglish you MUST understand:
+   - "Kal DBMS assignment submit karna hai 11 baje tak" -> Title: "Submit DBMS Assignment", Deadline: "Tomorrow · 11:00 PM", Priority: "high"
+   - "Shaam ko 6 baje gym jana hai chest workout ke liye" -> Title: "Gym Session: Chest Workout", TimeSlot: "18:00 - 19:30", Type: "routine"
+   - "Mummy ko call lagana hai raat ko" -> Title: "Call Mom", Type: "reminder", Deadline: "Tonight · 9:00 PM"
+   - "Shampoo aur grocery lana hai D-Mart se" -> Title: "Buy shampoo and groceries from D-Mart", Type: "task", Category: "Personal"
+   - "Project declaration form portal pe upload karna hai aaj 5 baje se pehle bohot zaroori hai" -> Title: "Upload Project Declaration Form on Portal", Priority: "urgent", Deadline: "Today · 5:00 PM"
+   - "Parso Operating Systems ka exam hai revision karna hai" -> Title: "Revise for Operating Systems Exam", Priority: "urgent", Category: "Academics"
+
+2. **OUTPUT LANGUAGE**: Regardless of whether the user wrote or spoke in Hinglish, Hindi, or English, ALL output fields (title, summary, notes, deadline) MUST be written in **clear, elegant, professional ENGLISH**.
+
+3. **TEMPORAL HINGLISH MAPPINGS**:
+   - "Aaj" -> Today
+   - "Kal" -> Tomorrow (or check context)
+   - "Parso" -> In 2 days
+   - "Subah" -> Morning (e.g. 09:00 AM)
+   - "Dopahar" -> Afternoon (e.g. 02:00 PM)
+   - "Shaam" -> Evening (e.g. 06:00 PM)
+   - "Raat" -> Night (e.g. 09:00 PM)
+   - "X baje" -> At X:00
+   - "Zaroori" / "Pakka" / "Khatam karna hai" / "Last date" -> High or Urgent priority
+
 Analyze the user's input and respond ONLY with a valid JSON object matching this exact TypeScript structure:
 
 {
-  "summary": "Short 1-2 sentence empathetic overview of what needs doing and the recommended focus.",
+  "summary": "Short 1-2 sentence empathetic overview in English of what needs doing and the recommended focus.",
   "items": [
     {
-      "title": "Clear, concise action title",
+      "title": "Clear, concise action title in English",
       "type": "task" | "deadline" | "event" | "routine" | "reminder",
       "category": "Academics" | "Projects" | "Personal" | "Health" | "Admin",
       "priority": "urgent" | "high" | "medium" | "low",
       "deadline": "e.g., Today · 5:00 PM, Tomorrow, Thursday, or null",
       "timeSlot": "e.g., 09:00 - 10:30, or null",
       "day": "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun" | null,
-      "notes": "Relevant details, context, or tips"
+      "notes": "Relevant details, translated context, or helpful tips in English"
     }
   ]
 }
@@ -53,7 +78,7 @@ export async function POST(req: NextRequest) {
     const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    const prompt = `${SYSTEM_PROMPT}\n\nUSER'S PREFERRED ASSISTANT TONE: ${userTone || 'Calm & Direct'}\n\nUSER'S RAW THOUGHT DUMP:\n"""${text.trim()}"""`;
+    const prompt = `${SYSTEM_PROMPT}\n\nUSER'S PREFERRED ASSISTANT TONE: ${userTone || 'Calm & Direct'}\n\nUSER'S RAW THOUGHT DUMP (May be Hinglish or English):\n"""${text.trim()}"""`;
 
     const response = await fetch(url, {
       method: 'POST',

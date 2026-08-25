@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
           {
             parts: [
               {
-                text: 'You are an accurate, fast voice-to-text transcriber for a task management app. Accurately transcribe the spoken words in this audio recording word-for-word into English text. Return ONLY the transcribed text without extra markdown, tags, or conversational fluff.',
+                text: 'You are an accurate, fast voice-to-text transcriber for a task management app. Accurately transcribe the spoken words in this audio recording. The speaker may speak in English, Hindi, or Hinglish (Hindi mixed with English words). Transcribe what is spoken faithfully into text using Latin/English alphabet (e.g., "mujhe kal assignment submit karna hai"). Return ONLY the transcribed text without extra markdown, tags, or conversational fluff.',
               },
               {
                 inline_data: {
