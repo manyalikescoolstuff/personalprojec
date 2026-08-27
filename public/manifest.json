@@ -1,0 +1,67 @@
+{
+  "id": "/",
+  "name": "GetDone — Personal AI Command Center",
+  "short_name": "GetDone",
+  "description": "A calm, minimal, and intelligent personal AI command center for managing daily tasks, academic libraries, schedules, and creative ideas.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#0A0F0D",
+  "theme_color": "#132A13",
+  "categories": ["productivity", "utilities", "education"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Voice Dump",
+      "short_name": "Voice Dump",
+      "description": "Speak and dump your workload to Totoro AI",
+      "url": "/?screen=braindump",
+      "icons": [{ "src": "/icons/icon-192x192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Idea Incubator",
+      "short_name": "Incubator",
+      "description": "Turn creative thoughts into project blueprints",
+      "url": "/?screen=incubator",
+      "icons": [{ "src": "/icons/icon-192x192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Totoro's Library",
+      "short_name": "Library",
+      "description": "Academic notes, subjects, and study materials",
+      "url": "/?screen=library",
+      "icons": [{ "src": "/icons/icon-192x192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Acorn Tasks",
+      "short_name": "Tasks",
+      "description": "View prioritized daily tasks",
+      "url": "/?screen=tasks",
+      "icons": [{ "src": "/icons/icon-192x192.svg", "sizes": "192x192" }]
+    }
+  ]
+}

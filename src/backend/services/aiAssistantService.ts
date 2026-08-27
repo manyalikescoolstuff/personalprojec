@@ -8,6 +8,7 @@ import {
   BrainDumpScreenshot,
   BrainDumpAnalysisResult,
   Subtask,
+  OneNextActionResult,
 } from '@/types';
 
 // Specialized Sub-Parsers for Clean AI Architecture
@@ -221,6 +222,167 @@ export const screenshotParser = {
 };
 
 export const aiAssistantService = {
+  /**
+   * Principle 3: "One Next Action"
+   * Intelligently selects the single highest leverage task to execute right now.
+   * Considers deadlines, priority levels, time of day, estimated effort, and skipped task IDs.
+   */
+  determineOneNextAction(
+    tasks: Task[],
+    currentHour: number = new Date().getHours(),
+    skippedIds: string[] = []
+  ): OneNextActionResult {
+    const uncompletedTasks = tasks.filter((t) => !t.isCompleted);
+    const totalActive = uncompletedTasks.length;
+
+    if (totalActive === 0) {
+      return {
+        task: null,
+        reason: 'Your sanctuary is all clear! Everything on your plate has been harvested.',
+        timeContext: 'Rest, recharge, or dump new seeds when ready 🌱',
+        firstStep: null,
+        hasSubtasks: false,
+        isUrgent: false,
+        totalActiveTasks: 0,
+        hasAlternatives: false,
+      };
+    }
+
+    // Filter out skipped IDs if possible, but fallback to all uncompleted if all were skipped
+    let pool = uncompletedTasks.filter((t) => !skippedIds.includes(t.id));
+    if (pool.length === 0) {
+      pool = uncompletedTasks; // Reset pool if user cycled through all
+    }
+
+    // Heuristic Scoring
+    const scored = pool.map((task) => {
+      let score = 0;
+
+      // 1. Base Priority Weight
+      if (task.priority === 'urgent') score += 120;
+      else if (task.priority === 'high') score += 80;
+      else if (task.priority === 'medium') score += 40;
+      else score += 15;
+
+      // 2. Today's Focus flag
+      if (task.isPriorityToday) score += 35;
+
+      // 3. Deadline urgency
+      const dl = (task.deadline || '').toLowerCase();
+      const hasTodayDeadline =
+        dl.includes('today') ||
+        dl.includes('tonight') ||
+        dl.includes('now') ||
+        dl.includes('11:59');
+      const hasTomorrowDeadline = dl.includes('tomorrow');
+
+      if (hasTodayDeadline) score += 90;
+      else if (hasTomorrowDeadline) score += 45;
+
+      // 4. Time of Day Context Weighting
+      // Morning (5:00 - 11:59): Peak cognitive window -> Academics & complex Projects
+      if (currentHour >= 5 && currentHour < 12) {
+        if (task.category === 'Academics' || task.category === 'Projects') score += 30;
+      }
+      // Afternoon (12:00 - 17:00): Steady execution
+      else if (currentHour >= 12 && currentHour < 17) {
+        if (task.category === 'Projects' || task.category === 'Admin') score += 20;
+      }
+      // Evening (17:00 - 21:30): Deadline wrap-up
+      else if (currentHour >= 17 && currentHour < 22) {
+        if (hasTodayDeadline) score += 50;
+      }
+      // Night (22:00 - 05:00): Low friction quick wins or urgent last-minute submissions
+      else {
+        if (hasTodayDeadline) score += 60;
+        else if (task.priority === 'low' || task.category === 'Personal') score += 25;
+      }
+
+      return { task, score, hasTodayDeadline };
+    });
+
+    // Sort descending by score
+    scored.sort((a, b) => b.score - a.score);
+    const best = scored[0].task;
+    const isUrgent = best.priority === 'urgent' || scored[0].hasTodayDeadline;
+
+    // Generate human-friendly reasoning
+    let reason = '';
+    const dl = best.deadline || '';
+    if (isUrgent) {
+      reason = dl
+        ? `Urgent deadline (${dl}) · Clear this out first to eliminate pressure`
+        : 'Top priority item · High leverage focus';
+    } else if (best.category === 'Academics') {
+      reason = 'Academic focus · Peak cognitive momentum window';
+    } else if (best.category === 'Projects') {
+      reason = 'Project milestone · Great time to build flow and progress';
+    } else if (best.category === 'Personal' || best.priority === 'low') {
+      reason = 'Low-friction task · Quick win to keep your momentum going';
+    } else {
+      reason = 'Recommended next focus based on your energy and schedule';
+    }
+
+    // Time context string
+    const estTime =
+      best.estimatedTime || (best.estimatedMinutes ? `${best.estimatedMinutes}m` : '25m');
+    let timeContext = `Estimated ${estTime} focus session`;
+    if (currentHour < 12) timeContext += ' · Morning deep work';
+    else if (currentHour < 17) timeContext += ' · Afternoon sprint';
+    else if (currentHour < 22) timeContext += ' · Evening wrap-up';
+    else timeContext += ' · Calm night rhythm';
+
+    // First Step (Micro-action to crush starter friction)
+    let firstStep: string | null = null;
+    const hasSubtasks = Array.isArray(best.subtasks) && best.subtasks.length > 0;
+
+    if (hasSubtasks) {
+      const firstIncomplete = best.subtasks.find((s) => !s.isCompleted);
+      if (firstIncomplete) {
+        firstStep = firstIncomplete.title;
+      }
+    }
+
+    if (!firstStep) {
+      const lowerTitle = best.title.toLowerCase();
+      if (
+        lowerTitle.includes('dbms') ||
+        lowerTitle.includes('database') ||
+        lowerTitle.includes('sql')
+      ) {
+        firstStep = 'Open notes / assignment portal and read question #1';
+      } else if (
+        lowerTitle.includes('dsa') ||
+        lowerTitle.includes('leetcode') ||
+        lowerTitle.includes('code')
+      ) {
+        firstStep = 'Open IDE / editor and outline test input cases';
+      } else if (
+        lowerTitle.includes('form') ||
+        lowerTitle.includes('submit') ||
+        lowerTitle.includes('internship')
+      ) {
+        firstStep = 'Open submission link and check required fields';
+      } else if (lowerTitle.includes('call') || lowerTitle.includes('email')) {
+        firstStep = 'Open dialer / draft app and write first greeting sentence';
+      } else {
+        firstStep = `Dedicate just the first 5 minutes to start "${best.title}"`;
+      }
+    }
+
+    return {
+      task: best,
+      reason,
+      timeContext,
+      firstStep,
+      hasSubtasks,
+      isUrgent,
+      totalActiveTasks: totalActive,
+      hasAlternatives: pool.length > 1 || uncompletedTasks.length > 1,
+      confidenceScore: Math.min(Math.round((scored[0].score / 250) * 100), 98),
+    };
+  },
+
   /**
    * Evaluates active priorities and deadlines to answer:
    * "What should I do right now?"

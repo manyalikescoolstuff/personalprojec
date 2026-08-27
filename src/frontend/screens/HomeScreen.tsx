@@ -19,6 +19,7 @@ import {
 import { useApp } from '@/context/AppContext';
 import { TaskRow } from '@/components/tasks/TaskRow';
 import { AIResponseCard } from '@/components/command/AIResponseCard';
+import { OneNextActionCard } from '@/components/command/OneNextActionCard';
 import { Priority, Task, BrainDumpAttachment } from '@/types';
 import { brainDumpService } from '@/services/brainDumpService';
 import { soundManager } from '@/lib/soundEffects';
@@ -355,7 +356,10 @@ export const HomeScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. Forest Bloom Progress Gauge */}
+      {/* 2. Principle 3: "One Next Action" Dynamic Command Hero */}
+      <OneNextActionCard />
+
+      {/* 3. Forest Bloom Progress Gauge */}
       <section className="p-4 sm:p-5 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] backdrop-blur-2xl shadow-sm">
         <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-[var(--text-secondary)] mb-2">
           <span className="flex items-center gap-2 text-[var(--text-primary)]">
@@ -372,7 +376,7 @@ export const HomeScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. Immediate Workload Dump Box (Where the user unloads their mental burden first) */}
+      {/* 4. Immediate Workload Dump Box (Where the user unloads their mental burden first) */}
       <section className="p-5 sm:p-6 rounded-3xl bg-[var(--bg-card)] border-2 border-[var(--border-highlight)]/70 backdrop-blur-2xl shadow-xl space-y-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -523,7 +527,7 @@ export const HomeScreen: React.FC = () => {
         </form>
       </section>
 
-      {/* 4. Sequenced Priorities: Strictly Ordered (Urgent 🌰 -> High 🍃 -> Medium 🌱 -> Low ⭐) */}
+      {/* 5. Sequenced Priorities: Strictly Ordered (Urgent 🌰 -> High 🍃 -> Medium 🌱 -> Low ⭐) */}
       <section className="space-y-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -562,7 +566,33 @@ export const HomeScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. Forest Spirit Recommendations */}
+      {/* 6. Creative Sprout Incubator Quick Jump */}
+      <section
+        onClick={() => setActiveScreen('incubator')}
+        className="group p-4.5 rounded-3xl bg-gradient-to-r from-emerald-950/30 via-purple-950/25 to-teal-950/30 border-2 border-emerald-500/30 hover:border-emerald-400/70 backdrop-blur-2xl shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-2xl shrink-0 group-hover:scale-110 transition-transform">
+            🌱
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Creative Idea Incubator & Enhancer</span>
+            </div>
+            <h4 className="text-sm sm:text-base font-bold text-[var(--text-primary)] leading-tight">
+              Turn raw thoughts into blueprints & 1-click milestone tasks
+            </h4>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 text-xs font-bold text-emerald-400 group-hover:text-emerald-300 group-hover:translate-x-1 transition-all self-end sm:self-center">
+          <span>Open Sprout Forge</span>
+          <span>&rarr;</span>
+        </div>
+      </section>
+
+      {/* 7. Forest Spirit Recommendations */}
       <section className="space-y-3.5">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />

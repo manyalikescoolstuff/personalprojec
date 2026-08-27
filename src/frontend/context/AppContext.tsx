@@ -6,12 +6,17 @@ import {
   AppScreen,
   AppTheme,
   UserProfile,
+  CourseInfo,
   Task,
   ScheduleBlock,
   BrainDumpItem,
   BrainDumpInputType,
   AIRecommendation,
   ExtractedBrainItem,
+  CreativeIdea,
+  IdeaCategory,
+  EnhancementMode,
+  Priority,
 } from '@/types';
 import {
   INITIAL_USER_PROFILE,
@@ -19,6 +24,7 @@ import {
   INITIAL_WEEK_SCHEDULE,
   INITIAL_AI_RECOMMENDATION,
   INITIAL_BRAIN_DUMPS,
+  INITIAL_IDEAS,
 } from '@/services/mockData';
 import { aiAssistantService } from '@/services/aiAssistantService';
 import { subscribeToAuthState } from '@/lib/supabase/auth';
@@ -53,6 +59,25 @@ interface AppContextType {
   setTheme: (theme: AppTheme) => void;
   profile: UserProfile;
   updateProfile: (updates: Partial<UserProfile>) => void;
+
+  // Totoro's Academic & Knowledge Library
+  courses: CourseInfo[];
+  addCourse: (course: Omit<CourseInfo, 'id'>) => void;
+  updateCourse: (id: string, updates: Partial<CourseInfo>) => void;
+  deleteCourse: (id: string) => void;
+
+  // Creative Idea Incubator & Enhancer
+  ideas: CreativeIdea[];
+  addIdea: (idea: Partial<CreativeIdea>) => void;
+  updateIdea: (id: string, updates: Partial<CreativeIdea>) => void;
+  deleteIdea: (id: string) => void;
+  plantIdeaAsTasks: (ideaId: string) => number;
+  incubateIdeaWithAI: (
+    ideaText: string,
+    category: IdeaCategory,
+    mode: EnhancementMode,
+    existingIdeaId?: string
+  ) => Promise<CreativeIdea>;
 
   // Supabase Auth & Cloud Sync
   authUser: User | null;
@@ -246,6 +271,178 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProfile((prev) => ({ ...prev, ...updates }));
     if (authUser) {
       saveUserProfileDoc(authUser.id, { ...profile, ...updates }).catch(console.warn);
+    }
+  };
+
+  // Totoro's Library Course Management
+  const courses = profile.courses || [];
+
+  const addCourse = (courseData: Omit<CourseInfo, 'id'>) => {
+    const newCourse: CourseInfo = {
+      ...courseData,
+      id: `course-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    };
+    const updated = [...(profile.courses || []), newCourse];
+    updateProfile({ courses: updated });
+  };
+
+  const updateCourse = (id: string, updates: Partial<CourseInfo>) => {
+    const updated = (profile.courses || []).map((c) =>
+      c.id === id ? { ...c, ...updates } : c
+    );
+    updateProfile({ courses: updated });
+  };
+
+  const deleteCourse = (id: string) => {
+    const updated = (profile.courses || []).filter((c) => c.id !== id);
+    updateProfile({ courses: updated });
+  };
+
+  // Creative Idea Incubator & Enhancer State & Operations
+  const [ideas, setIdeas] = useState<CreativeIdea[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem('getdone_creative_ideas');
+        if (local) return JSON.parse(local);
+      } catch (e) {
+        console.warn('Failed to parse local creative ideas:', e);
+      }
+    }
+    return INITIAL_IDEAS;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('getdone_creative_ideas', JSON.stringify(ideas));
+      } catch (e) {
+        console.warn('Failed to save creative ideas to localStorage:', e);
+      }
+    }
+  }, [ideas]);
+
+  const addIdea = (ideaData: Partial<CreativeIdea>) => {
+    const newIdea: CreativeIdea = {
+      id: `idea-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      title: ideaData.title?.trim() || 'Untitled Sprout Concept',
+      rawThought: ideaData.rawThought || '',
+      category: ideaData.category || 'Tech & Code',
+      stage: ideaData.stage || 'sprout',
+      tags: ideaData.tags || ['Sprout'],
+      blueprint: ideaData.blueprint,
+      createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      isPlantedAsTasks: false,
+    };
+    setIdeas((prev) => [newIdea, ...prev]);
+  };
+
+  const updateIdea = (id: string, updates: Partial<CreativeIdea>) => {
+    setIdeas((prev) =>
+      prev.map((idea) =>
+        idea.id === id
+          ? {
+              ...idea,
+              ...updates,
+              updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            }
+          : idea
+      )
+    );
+  };
+
+  const deleteIdea = (id: string) => {
+    setIdeas((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const plantIdeaAsTasks = (ideaId: string): number => {
+    const idea = ideas.find((i) => i.id === ideaId);
+    if (!idea || !idea.blueprint || !idea.blueprint.milestones) return 0;
+
+    const newTasks: Task[] = [];
+    let count = 0;
+
+    idea.blueprint.milestones.forEach((milestone, mIdx) => {
+      milestone.tasks.forEach((taskTitle, tIdx) => {
+        count++;
+        const newTask: Task = {
+          id: `task-idea-${Date.now()}-${mIdx}-${tIdx}`,
+          title: `[${idea.title}] ${taskTitle}`,
+          description: `${milestone.phase}: ${milestone.title} (Estimated: ${milestone.duration || '1-2 days'})`,
+          priority: mIdx === 0 ? 'high' : 'medium',
+          deadline: mIdx === 0 ? 'This Week' : 'Next Week',
+          isCompleted: false,
+          isPriorityToday: mIdx === 0,
+          category: 'Projects',
+          estimatedMinutes: 45,
+          estimatedTime: '45m',
+          subtasks: [],
+          tags: ['Project', idea.category, `Phase ${mIdx + 1}`],
+        };
+        newTasks.push(newTask);
+      });
+    });
+
+    if (newTasks.length > 0) {
+      setTasks((prev) => [...newTasks, ...prev]);
+      updateIdea(ideaId, { stage: 'planted', isPlantedAsTasks: true });
+    }
+
+    return count;
+  };
+
+  const incubateIdeaWithAI = async (
+    ideaText: string,
+    category: IdeaCategory,
+    mode: EnhancementMode,
+    existingIdeaId?: string
+  ): Promise<CreativeIdea> => {
+    const res = await fetch('/api/ai/incubate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ideaText,
+        category,
+        enhancementMode: mode,
+        userProfile: profile,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to incubate idea with AI');
+    }
+
+    const data = await res.json();
+    const result = data.result;
+
+    if (existingIdeaId) {
+      const updatedIdea: Partial<CreativeIdea> = {
+        title: result.title,
+        category: result.category || category,
+        tags: result.tags || [],
+        stage: 'blueprint',
+        blueprint: result.blueprint,
+      };
+      updateIdea(existingIdeaId, updatedIdea);
+      return {
+        ...(ideas.find((i) => i.id === existingIdeaId)!),
+        ...updatedIdea,
+      } as CreativeIdea;
+    } else {
+      const newIdea: CreativeIdea = {
+        id: `idea-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        title: result.title || 'Incubated Project Idea',
+        rawThought: ideaText,
+        category: result.category || category,
+        stage: 'blueprint',
+        tags: result.tags || ['AI Blueprint'],
+        blueprint: result.blueprint,
+        createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        isPlantedAsTasks: false,
+      };
+      setIdeas((prev) => [newIdea, ...prev]);
+      return newIdea;
     }
   };
 
@@ -457,15 +654,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    if (cleanCmd.startsWith('add ') || cleanCmd.startsWith('new ')) {
-      const title = command.replace(/^(add|new)\s+(task\s*:?|todo\s*:?)?/i, '').trim();
-      if (title) {
-        addTask({ title, priority: 'medium', category: 'Personal', isPriorityToday: true });
+    if (cleanCmd.startsWith('add ') || cleanCmd.startsWith('new ') || cleanCmd.startsWith('create ')) {
+      let rawTitle = command.replace(/^(add|new|create)\s+(task\s*:?|todo\s*:?|priority\s*:?)?/i, '').trim();
+      if (rawTitle) {
+        let detectedPriority: Priority | null = null;
+
+        if (/\b(urgent|critical|aaj hi|turant|emergency)\b/i.test(rawTitle)) {
+          detectedPriority = 'urgent';
+          rawTitle = rawTitle.replace(/\b(urgent|critical|emergency)\b/gi, '').trim();
+        } else if (/\b(high|important|zaroori|top priority)\b/i.test(rawTitle)) {
+          detectedPriority = 'high';
+          rawTitle = rawTitle.replace(/\b(high priority|high|important|top priority)\b/gi, '').trim();
+        } else if (/\b(low|whenever|casual|aaram se)\b/i.test(rawTitle)) {
+          detectedPriority = 'low';
+          rawTitle = rawTitle.replace(/\b(low priority|low)\b/gi, '').trim();
+        } else if (/\b(medium|normal)\b/i.test(rawTitle)) {
+          detectedPriority = 'medium';
+          rawTitle = rawTitle.replace(/\b(medium priority|medium|normal)\b/gi, '').trim();
+        }
+
+        // If the user DID NOT tell the priority, prompt them directly!
+        if (!detectedPriority) {
+          setAiRecommendation({
+            id: `rec-priority-prompt-${Date.now()}`,
+            type: 'priority_prompt',
+            title: 'Choose Priority Level',
+            message: `I caught your task "${rawTitle}". What priority level should I set for this?`,
+            pendingTaskData: {
+              title: rawTitle,
+              category: 'Personal',
+              isPriorityToday: true,
+            },
+          });
+          return;
+        }
+
+        // Otherwise create directly with their requested priority
+        addTask({ title: rawTitle, priority: detectedPriority, category: 'Personal', isPriorityToday: true });
         setAiRecommendation({
           id: `rec-created-${Date.now()}`,
           type: 'right_now',
           title: 'Priority Created',
-          message: `Added "${title}" to your active priorities for today.`,
+          message: `Added "${rawTitle}" as a ${detectedPriority.toUpperCase()} priority for today.`,
           actionLabel: 'View in Tasks',
         });
         return;
@@ -481,6 +711,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         tasks,
         schedule,
         tone: profile.assistantTone,
+        profile,
       }),
     })
       .then((res) => res.json())
@@ -872,6 +1103,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTheme,
         profile,
         updateProfile,
+        courses,
+        addCourse,
+        updateCourse,
+        deleteCourse,
+        ideas,
+        addIdea,
+        updateIdea,
+        deleteIdea,
+        plantIdeaAsTasks,
+        incubateIdeaWithAI,
         authUser,
         isAuthModalOpen,
         setAuthModalOpen,

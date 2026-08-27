@@ -32,6 +32,8 @@ export const Sidebar: React.FC = () => {
 
   const navItems: { id: AppScreen; label: string; icon: string; subtitle: string }[] = [
     { id: 'home', label: 'Sanctuary', icon: '🏡', subtitle: 'Command Center' },
+    { id: 'incubator', label: 'Sprout Incubator', icon: '🌱', subtitle: 'Creative Forge' },
+    { id: 'library', label: "Totoro's Library", icon: '📚', subtitle: 'Academics & Memory' },
     { id: 'braindump', label: 'Catbus Dump', icon: '🚌', subtitle: 'AI Thought Sorter' },
     { id: 'plan', label: 'Focus Glade', icon: '🌿', subtitle: 'Weekly Rhythm' },
     { id: 'tasks', label: 'Acorn Tasks', icon: '🌰', subtitle: 'Priority List' },

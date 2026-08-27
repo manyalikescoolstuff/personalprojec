@@ -9,11 +9,14 @@ import { HomeScreen } from '@/screens/HomeScreen';
 import { BrainDumpScreen } from '@/screens/BrainDumpScreen';
 import { WeekPlanScreen } from '@/screens/WeekPlanScreen';
 import { TasksScreen } from '@/screens/TasksScreen';
+import { LibraryScreen } from '@/screens/LibraryScreen';
+import { IncubatorScreen } from '@/screens/IncubatorScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
 
 // Dynamic Totoro Emote Companion & Glowing Fireflies
 import { TotoroEmote } from '@/components/companion/TotoroEmote';
 import { FirefliesGlow } from '@/components/ambient/FirefliesGlow';
+import { MobileQuickCaptureDock } from '@/components/mobile/MobileQuickCaptureDock';
 
 // Command Center Modals
 import { TaskDetailModal } from '@/components/tasks/TaskDetailModal';
@@ -46,6 +49,8 @@ export default function AppMain() {
         {/* Dynamic Screen View */}
         <main className="flex-1 px-4 sm:px-6 md:px-8 py-6 max-w-6xl w-full mx-auto pb-24 md:pb-12">
           {activeScreen === 'home' && <HomeScreen />}
+          {activeScreen === 'incubator' && <IncubatorScreen />}
+          {activeScreen === 'library' && <LibraryScreen />}
           {activeScreen === 'braindump' && <BrainDumpScreen />}
           {activeScreen === 'plan' && <WeekPlanScreen />}
           {activeScreen === 'tasks' && <TasksScreen />}
@@ -53,8 +58,9 @@ export default function AppMain() {
         </main>
       </div>
 
-      {/* 3. Mobile Bottom Navigation */}
+      {/* 3. Mobile Bottom Navigation & Quick-Capture Dock */}
       <BottomNav />
+      <MobileQuickCaptureDock />
 
       {/* 4. Interactive Animated Totoro Companion */}
       <TotoroEmote />

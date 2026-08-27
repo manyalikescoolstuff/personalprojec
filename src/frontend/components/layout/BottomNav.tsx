@@ -9,6 +9,8 @@ export const BottomNav: React.FC = () => {
 
   const navItems: { id: AppScreen; label: string; icon: string }[] = [
     { id: 'home', label: 'Sanctuary', icon: '🏡' },
+    { id: 'incubator', label: 'Sprout', icon: '🌱' },
+    { id: 'library', label: 'Library', icon: '📚' },
     { id: 'braindump', label: 'Catbus', icon: '🚌' },
     { id: 'plan', label: 'Glade', icon: '🌿' },
     { id: 'tasks', label: 'Acorns', icon: '🌰' },

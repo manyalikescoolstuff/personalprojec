@@ -19,7 +19,20 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/frontend/*": ["./src/frontend/*"],
+      "@/backend/*": ["./src/backend/*"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/components/*": ["./src/frontend/components/*"],
+      "@/screens/*": ["./src/frontend/screens/*"],
+      "@/context/*": ["./src/frontend/context/*"],
+      "@/services/*": ["./src/backend/services/*"],
+      "@/supabase/*": ["./src/backend/supabase/*"],
+      "@/lib/supabase/*": ["./src/backend/supabase/*"],
+      "@/lib/soundEffects": ["./src/shared/lib/soundEffects"],
+      "@/lib/*": ["./src/shared/lib/*", "./src/backend/supabase/*"],
+      "@/types": ["./src/shared/types"],
+      "@/types/*": ["./src/shared/types/*"]
     }
   },
   "include": [

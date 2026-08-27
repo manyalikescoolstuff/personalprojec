@@ -110,6 +110,11 @@ class SoundManager {
     }
   }
 
+  // Alias for task completion
+  public playSuccess() {
+    this.playQuestComplete();
+  }
+
   // Level up fanfare
   public playLevelUp() {
     if (this.isMuted) return;

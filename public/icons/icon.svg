@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A1810" />
+      <stop offset="50%" stop-color="#132A13" />
+      <stop offset="100%" stop-color="#061008" />
+    </linearGradient>
+    <linearGradient id="totoroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5A6772" />
+      <stop offset="100%" stop-color="#3D4852" />
+    </linearGradient>
+    <linearGradient id="bellyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F7F4EA" />
+      <stop offset="100%" stop-color="#E5DEC9" />
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ADE80" />
+      <stop offset="100%" stop-color="#16A34A" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded squircle -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+  <rect width="504" height="504" x="4" y="4" rx="124" fill="none" stroke="#2D5A27" stroke-width="6" opacity="0.6" />
+
+  <!-- Ambient glowing fireflies / spores -->
+  <circle cx="90" cy="110" r="8" fill="#4ADE80" opacity="0.8" filter="url(#glow)" />
+  <circle cx="420" cy="130" r="6" fill="#FBBF24" opacity="0.7" filter="url(#glow)" />
+  <circle cx="100" cy="410" r="5" fill="#38BDF8" opacity="0.7" filter="url(#glow)" />
+  <circle cx="430" cy="390" r="7" fill="#4ADE80" opacity="0.8" filter="url(#glow)" />
+
+  <!-- Totoro Ears -->
+  <ellipse cx="205" cy="160" rx="22" ry="55" fill="url(#totoroGrad)" transform="rotate(-10 205 160)" />
+  <ellipse cx="307" cy="160" rx="22" ry="55" fill="url(#totoroGrad)" transform="rotate(10 307 160)" />
+
+  <!-- Totoro Body -->
+  <ellipse cx="256" cy="300" rx="140" ry="145" fill="url(#totoroGrad)" />
+
+  <!-- Totoro Belly -->
+  <ellipse cx="256" cy="330" rx="98" ry="105" fill="url(#bellyGrad)" />
+
+  <!-- Belly Chevrons -->
+  <path d="M 230 270 Q 240 260 250 270 Q 240 265 230 270" fill="#3D4852" />
+  <path d="M 262 270 Q 272 260 282 270 Q 272 265 262 270" fill="#3D4852" />
+  <path d="M 215 295 Q 225 285 235 295 Q 225 290 215 295" fill="#3D4852" />
+  <path d="M 246 295 Q 256 285 266 295 Q 256 290 246 295" fill="#3D4852" />
+  <path d="M 277 295 Q 287 285 297 295 Q 287 290 277 295" fill="#3D4852" />
+
+  <!-- Eyes -->
+  <circle cx="215" cy="215" r="18" fill="#FFFFFF" />
+  <circle cx="297" cy="215" r="18" fill="#FFFFFF" />
+  <circle cx="218" cy="215" r="8" fill="#1C1E21" />
+  <circle cx="294" cy="215" r="8" fill="#1C1E21" />
+  <circle cx="221" cy="212" r="3" fill="#FFFFFF" />
+  <circle cx="297" cy="212" r="3" fill="#FFFFFF" />
+
+  <!-- Nose -->
+  <ellipse cx="256" cy="225" rx="14" ry="7" fill="#1C1E21" />
+
+  <!-- Whiskers -->
+  <path d="M 140 230 Q 170 235 195 235" stroke="#1C1E21" stroke-width="4" stroke-linecap="round" />
+  <path d="M 135 245 Q 165 247 195 245" stroke="#1C1E21" stroke-width="4" stroke-linecap="round" />
+  <path d="M 317 235 Q 342 235 372 230" stroke="#1C1E21" stroke-width="4" stroke-linecap="round" />
+  <path d="M 317 245 Q 347 247 377 245" stroke="#1C1E21" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Green Leaf on Head -->
+  <path d="M 256 160 Q 230 110 275 95 Q 305 130 256 160 Z" fill="url(#leafGrad)" filter="url(#glow)" />
+  <path d="M 256 160 Q 268 125 285 105" stroke="#22C55E" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Sparkling Sprout badge in bottom right -->
+  <circle cx="400" cy="400" r="42" fill="#16A34A" stroke="#4ADE80" stroke-width="4" filter="url(#glow)" />
+  <path d="M 400 415 L 400 388 Q 385 375 400 365 Q 415 375 400 388" fill="#FFFFFF" />
+</svg>

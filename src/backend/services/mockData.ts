@@ -4,17 +4,140 @@ import {
   ScheduleBlock,
   BrainDumpItem,
   AIRecommendation,
+  CreativeIdea,
 } from '@/types';
 
 export const INITIAL_USER_PROFILE: UserProfile = {
   name: 'Manya',
-  roleTitle: 'Engineering & Design Workspace',
+  roleTitle: 'Computer Science & AI Engineer',
   assistantTone: 'Calm & Direct',
   dailyFocusLimitHours: 4.5,
   morningBriefingTime: '08:30 AM',
   autoWorkloadEasing: true,
   calendarSyncEnabled: true,
   voiceInputMode: true,
+
+  // Personal Library
+  bio: 'CS undergrad building AI tools, exploring full-stack engineering, and managing academic & personal growth in a calm forest flow.',
+  primaryGoal: 'Master Data Structures & Algorithms, score 9+ CGPA, and ship GetDone.',
+  learningStyle: 'Step-by-step Bullet Points',
+  peakFocusWindow: 'Night Owl (9 PM - 2 AM)',
+  burnoutTriggers: 'Too many back-to-back unorganized deadlines and fragmented context switching.',
+  routines: 'Morning matcha review, 25m Pomodoro focus sprints, late-night deep coding block.',
+  sideProjects: 'GetDone AI Command Center, Personal Portfolio, Full-Stack Next.js apps.',
+
+  // Academic Library
+  university: 'Institute of Technology',
+  degree: 'Bachelor of Technology (B.Tech)',
+  major: 'Computer Science & Engineering',
+  semester: 'Semester 5 (Fall 2026)',
+  targetCgpa: '9.2 / 10.0',
+  academicNotes: 'Midterms scheduled for next month. Lab submissions due every Thursday.',
+  courses: [
+    {
+      id: 'course-dbms',
+      code: 'CS301',
+      name: 'Database Management Systems',
+      professor: 'Dr. Sharma',
+      credits: 4,
+      semester: 'Sem 5',
+      portalUrl: 'https://classroom.google.com',
+      notes: 'B+ Trees, SQL Query Optimization, Normalization up to BCNF',
+      color: 'emerald',
+      folders: [
+        { id: 'f-dbms-1', name: 'Unit 1 — B+ Trees & Indexing', color: 'emerald', createdAt: 'Aug 20' },
+        { id: 'f-dbms-2', name: 'Lab Assignments & Queries', color: 'teal', createdAt: 'Aug 22' },
+      ],
+      resources: [
+        {
+          id: 'res-dbms-1',
+          name: 'B+ Tree Indexing & Fanout Slides.pdf',
+          type: 'file',
+          folderId: 'f-dbms-1',
+          fileSize: '2.4 MB',
+          createdAt: 'Aug 21',
+          tags: ['Slides', 'Unit 1'],
+        },
+        {
+          id: 'res-dbms-2',
+          name: 'SQL Query Optimization Cheat Sheet',
+          type: 'text',
+          folderId: 'f-dbms-2',
+          textContent: '1. Use indexing on foreign keys.\n2. Avoid SELECT * in high concurrency workloads.\n3. Verify cost estimates via EXPLAIN ANALYZE.\n4. Hash Join is optimal for large unsorted equi-joins.',
+          createdAt: 'Aug 23',
+          tags: ['Cheat Sheet', 'SQL'],
+        },
+        {
+          id: 'res-dbms-3',
+          name: 'GeeksForGeeks DBMS Normalization Guide',
+          type: 'link',
+          folderId: null,
+          fileUrl: 'https://www.geeksforgeeks.org/dbms/',
+          createdAt: 'Aug 24',
+          tags: ['Guide', 'Theory'],
+        },
+      ],
+    },
+    {
+      id: 'course-dsa',
+      code: 'CS302',
+      name: 'Design & Analysis of Algorithms',
+      professor: 'Prof. Verma',
+      credits: 4,
+      semester: 'Sem 5',
+      portalUrl: 'https://leetcode.com',
+      notes: 'Dynamic Programming, Graph Traversal (DFS/BFS, Topological Sort, Dijkstra)',
+      color: 'amber',
+      folders: [
+        { id: 'f-dsa-1', name: 'Graph Theory & Topological Sort', color: 'amber', createdAt: 'Aug 18' },
+        { id: 'f-dsa-2', name: 'Dynamic Programming Patterns', color: 'rose', createdAt: 'Aug 19' },
+      ],
+      resources: [
+        {
+          id: 'res-dsa-1',
+          name: 'Graph Traversal Complexity Cheatsheet',
+          type: 'text',
+          folderId: 'f-dsa-1',
+          textContent: '• BFS: Queue based, Shortest path on unweighted graphs, O(V + E)\n• DFS: Stack/Recursion, Cycle detection, Topological sort, O(V + E)\n• Dijkstra: Min-Heap priority queue, Non-negative weights, O((V + E) log V)',
+          createdAt: 'Aug 20',
+          tags: ['Graphs', 'Cheat Sheet'],
+        },
+        {
+          id: 'res-dsa-2',
+          name: 'NeetCode 150 Roadmap',
+          type: 'link',
+          folderId: null,
+          fileUrl: 'https://neetcode.io/roadmap',
+          createdAt: 'Aug 22',
+          tags: ['Practice', 'Roadmap'],
+        },
+      ],
+    },
+    {
+      id: 'course-os',
+      code: 'CS303',
+      name: 'Operating Systems & Concurrency',
+      professor: 'Dr. Rao',
+      credits: 4,
+      semester: 'Sem 5',
+      notes: 'Process Scheduling, Mutex/Semaphores, Memory Virtualization, Page Replacement',
+      color: 'teal',
+      folders: [],
+      resources: [],
+    },
+    {
+      id: 'course-cn',
+      code: 'CS304',
+      name: 'Computer Networks',
+      professor: 'Dr. Iyer',
+      credits: 3,
+      semester: 'Sem 5',
+      notes: 'TCP/IP Model, Subnetting, Routing Protocols (OSPF, BGP), Congestion Control',
+      color: 'indigo',
+      folders: [],
+      resources: [],
+    },
+  ],
 };
 
 export const INITIAL_TASKS: Task[] = [
@@ -295,4 +418,81 @@ export const INITIAL_BRAIN_DUMPS: BrainDumpItem[] = [
       { title: 'Gym workout', day: 'Wed', timeSlot: '06:00 PM' },
     ],
   },
+];
+
+export const INITIAL_IDEAS: CreativeIdea[] = [
+  {
+    id: 'idea-1',
+    title: 'AI Exam Flashcard & Spaced Repetition Agent',
+    rawThought: 'An app where I can drop my PDF lecture slides and it automatically creates interactive active-recall flashcards with spaced repetition and voice quizzes.',
+    category: 'Tech & Code',
+    stage: 'blueprint',
+    tags: ['AI Agent', 'EdTech', 'Active Recall', 'Next.js'],
+    createdAt: 'Aug 24',
+    updatedAt: 'Aug 25',
+    isPlantedAsTasks: false,
+    blueprint: {
+      conceptSummary: 'An automated revision companion that digests syllabus PDFs and generates active recall flashcard decks with smart spaced repetition (SM-2 algorithm) and voice quizzing.',
+      targetAudienceOrValue: 'CS & Engineering students wanting to cut exam prep time in half through active recall.',
+      techStackOrTools: [
+        'Next.js 15 (App Router & React 19)',
+        'Google Gemini 2.0 Flash (Multimodal PDF analysis)',
+        'IndexedDB / Supabase (Offline deck storage)',
+        'Web Speech API (Voice flashcard quizzing)'
+      ],
+      keyFeatures: [
+        'One-click PDF slide ingest to 20 high-yield flashcards',
+        'Voice interactive drill mode ("Totoro Quiz Master")',
+        'Spaced repetition algorithm scheduling cards based on confidence',
+        'Visual concept diagrams generation for tough topics'
+      ],
+      milestones: [
+        {
+          phase: 'Phase 1: Architecture & Ingest',
+          title: 'PDF Parser & Gemini Card Extractor',
+          duration: '2 Days',
+          tasks: [
+            'Setup PDF file dropzone with pdf-parse library',
+            'Write Gemini prompt to generate structured Q&A pairs with difficulty tags',
+            'Create local storage schema for decks and card histories'
+          ]
+        },
+        {
+          phase: 'Phase 2: Interactive Drill Mode',
+          title: 'Spaced Repetition Engine & Swipe UI',
+          duration: '3 Days',
+          tasks: [
+            'Implement SM-2 interval calculator (Easy, Good, Hard, Again)',
+            'Build fluid mobile-first flashcard swiper component',
+            'Add Web Speech synthesis for auditory question readout'
+          ]
+        },
+        {
+          phase: 'Phase 3: Polish & Deployment',
+          title: 'Deck Analytics & Export',
+          duration: '1 Day',
+          tasks: [
+            'Build study streak calendar and mastery percentage meter',
+            'Deploy to Vercel and verify mobile responsive layout'
+          ]
+        }
+      ],
+      potentialBottlenecks: [
+        'Large PDF token limits: Solve by chunking slides into 10-page batches before sending to Gemini.',
+        'Spaced repetition schedule drift: Use client-side timestamp reconciliation.'
+      ],
+      totoroProTip: 'Start with 1 lecture slide deck from your DBMS course. Test it immediately on unit 1 queries to feel the magic before building multi-deck syncing! 🌿'
+    }
+  },
+  {
+    id: 'idea-2',
+    title: 'Bioluminescent Smart Desk Plant Companion',
+    rawThought: 'An IoT + Web dashboard plant monitor that glows different Ghibli colors depending on soil moisture and ambient humidity, with a virtual animated spirit on my desktop.',
+    category: 'Creative & Design',
+    stage: 'sprout',
+    tags: ['IoT', 'Hardware', 'Hardware UI', 'Ambient'],
+    createdAt: 'Aug 26',
+    updatedAt: 'Aug 26',
+    isPlantedAsTasks: false
+  }
 ];
